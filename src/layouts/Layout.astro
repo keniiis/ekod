@@ -1,0 +1,89 @@
+---
+import CartDropdown from '../components/CartDropdown';
+
+interface Props {
+  title: string;
+}
+
+const { title } = Astro.props;
+---
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{title}</title>
+    {/* Mercado Pago SDK will be loaded dynamically by CheckoutForm.tsx */}
+  </head>
+  <body class="min-h-screen bg-white text-gray-900 font-sans">
+    <!-- Header estilo Shopify -->
+    <header class="border-b border-gray-200 bg-white sticky top-0 z-50">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center h-16">
+          <!-- Logo -->
+          <div class="flex items-center">
+            <a href="/" class="text-xl font-medium tracking-tight">MINIMAL SHOP</a>
+          </div>
+
+          <!-- Navegación principal -->
+          <nav class="hidden md:flex space-x-8">
+            <a href="/tienda" class="text-sm font-medium hover:text-gray-600">Tienda</a>
+            <a href="/blog" class="text-sm font-medium hover:text-gray-600">Blog</a>
+            <a href="/sobre-nosotros" class="text-sm font-medium hover:text-gray-600">Nosotros</a>
+          </nav>
+
+          <!-- Iconos de usuario/carrito -->
+          <div class="flex items-center space-x-4">
+            <CartDropdown client:load />
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="min-h-[calc(100vh-160px)]">
+      <slot />
+    </main>
+
+    <!-- Footer estilo Shopify -->
+    <footer class="bg-gray-50 border-t border-gray-200 mt-12">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+          <div>
+            <h3 class="text-sm font-semibold tracking-wider uppercase mb-4">MINIMAL SHOP</h3>
+            <p class="text-sm text-gray-500">Tu tienda minimalista de confianza</p>
+          </div>
+          <div>
+            <h3 class="text-sm font-semibold tracking-wider uppercase mb-4">Comprar</h3>
+            <ul class="space-y-2">
+              <li><a href="/tienda" class="text-sm text-gray-500 hover:text-gray-900">Todos los productos</a></li>
+              <li><a href="/colecciones" class="text-sm text-gray-500 hover:text-gray-900">Colecciones</a></li>
+              <li><a href="/ofertas" class="text-sm text-gray-500 hover:text-gray-900">Ofertas</a></li>
+            </ul>
+          </div>
+          <div>
+            <h3 class="text-sm font-semibold tracking-wider uppercase mb-4">Información</h3>
+            <ul class="space-y-2">
+              <li><a href="/sobre-nosotros" class="text-sm text-gray-500 hover:text-gray-900">Nosotros</a></li>
+              <li><a href="/blog" class="text-sm text-gray-500 hover:text-gray-900">Blog</a></li>
+              <li><a href="/contacto" class="text-sm text-gray-500 hover:text-gray-900">Contacto</a></li>
+            </ul>
+          </div>
+          <div>
+            <h3 class="text-sm font-semibold tracking-wider uppercase mb-4">Legal</h3>
+            <ul class="space-y-2">
+              <li><a href="/politica-privacidad" class="text-sm text-gray-500 hover:text-gray-900">Privacidad</a></li>
+              <li><a href="/terminos" class="text-sm text-gray-500 hover:text-gray-900">Términos</a></li>
+              <li><a href="/preguntas-frecuentes" class="text-sm text-gray-500 hover:text-gray-900">FAQ</a></li>
+            </ul>
+          </div>
+        </div>
+        <div class="mt-12 border-t border-gray-200 pt-8 text-sm text-gray-500 text-center">
+          &copy; {new Date().getFullYear()} Minimal Shop. Todos los derechos reservados.
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

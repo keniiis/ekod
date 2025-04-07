@@ -1,0 +1,66 @@
+---
+interface Testimonio {
+  id: string;
+  name: string;
+  location: string;
+  comment: string;
+  rating: number;
+}
+
+const testimonios: Testimonio[] = [
+  {
+    id: '1',
+    name: 'María González',
+    location: 'Buenos Aires',
+    comment: 'Los productos superaron mis expectativas. La calidad es excelente y el envío fue muy rápido.',
+    rating: 5
+  },
+  {
+    id: '2',
+    name: 'Carlos Pérez',
+    location: 'Madrid',
+    comment: 'Me encanta el estilo minimalista de todos los productos. Volveré a comprar sin duda.',
+    rating: 4
+  },
+  {
+    id: '3',
+    name: 'Ana Martínez',
+    location: 'Ciudad de México',
+    comment: 'Excelente servicio al cliente y los productos llegaron perfectamente empaquetados.',
+    rating: 5
+  }
+];
+---
+
+<div class="bg-gray-50 py-12">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <h2 class="text-2xl font-light tracking-tight text-gray-900 text-center mb-8">Lo que dicen nuestros clientes</h2>
+    
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+      {testimonios.map(testimonio => (
+        <div class="bg-white p-6 rounded-lg shadow-sm">
+          <div class="flex mb-4">
+            {[...Array(5)].map((_, i) => (
+              <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                width="16" 
+                height="16" 
+                viewBox="0 0 24 24" 
+                fill={i < testimonio.rating ? "currentColor" : "none"} 
+                stroke="currentColor"
+                class={`${i < testimonio.rating ? 'text-yellow-400' : 'text-gray-300'}`}
+              >
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+              </svg>
+            ))}
+          </div>
+          <p class="text-gray-600 mb-4">"{testimonio.comment}"</p>
+          <div>
+            <p class="font-medium text-gray-900">{testimonio.name}</p>
+            <p class="text-sm text-gray-500">{testimonio.location}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+</div>

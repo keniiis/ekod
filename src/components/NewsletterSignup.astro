@@ -1,0 +1,27 @@
+---
+const placeholderText = "Tu dirección de correo electrónico";
+---
+
+<div class="bg-gray-50 border-t border-b border-gray-200 py-12">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="text-center">
+      <h2 class="text-2xl font-light tracking-tight text-gray-900 mb-2">Suscríbete a nuestro newsletter</h2>
+      <p class="text-gray-500 max-w-xl mx-auto mb-6">Recibe las últimas novedades, promociones y consejos directamente en tu bandeja de entrada.</p>
+      
+      <form class="flex flex-col sm:flex-row justify-center max-w-md mx-auto gap-2">
+        <input
+          type="email"
+          placeholder={placeholderText}
+          required
+          class="flex-1 min-w-0 px-4 py-2 text-sm border border-gray-300 rounded focus:ring-black focus:border-black"
+        />
+        <button
+          type="submit"
+          class="px-6 py-2 bg-black text-white text-sm font-medium rounded hover:bg-gray-800 transition-colors"
+        >
+          Suscribirse
+        </button>
+      </form>
+    </div>
+  </div>
+</div>

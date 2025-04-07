@@ -1,0 +1,46 @@
+---
+import Layout from '../layouts/Layout.astro';
+import ProductCard from '../components/ProductCard.astro';
+import { products } from '../data/products';
+
+// Obtener categorías únicas
+const categories = Array.from(new Set(products.map(p => p.category)));
+---
+
+<Layout title="Tienda | Minimal Shop">
+  <div class="max-w-7xl mx-auto px-4 py-8">
+    <h1 class="text-2xl font-light mb-8">Productos</h1>
+    
+    <div class="flex flex-col md:flex-row gap-8">
+      <!-- Filtros -->
+      <aside class="md:w-64">
+        <div class="space-y-6">
+          <!-- Filtro por categorías -->
+          <div>
+            <h3 class="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-3">Categorías</h3>
+            <ul class="space-y-2">
+              {categories.map(category => (
+                <li>
+                  <label class="flex items-center space-x-2">
+                    <input 
+                      type="checkbox" 
+                      class="rounded border-gray-300 text-black focus:ring-black"
+                    />
+                    <span class="text-sm capitalize">{category}</span>
+                  </label>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Lista de productos -->
+      <div class="flex-1 grid grid-cols-2 md:grid-cols-3 gap-4">
+        {products.map(product => (
+          <ProductCard product={product} />
+        ))}
+      </div>
+    </div>
+  </div>
+</Layout>

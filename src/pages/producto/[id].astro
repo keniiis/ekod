@@ -1,0 +1,98 @@
+---
+// src/pages/producto/[id].astro
+import Layout from '../../layouts/Layout.astro';
+import { products, type Product } from '../../data/products';
+import AddToCartButton from '../../components/AddToCartButton.tsx';
+import { formatPriceCLP } from '../../utils/formatting'; // Import the formatter
+
+// --- Server-side Data Fetching (for output: 'server') ---
+const { id } = Astro.params; // Get ID from URL parameters
+const product = products.find((p) => p.id === id); // Find product by ID
+
+// Handle product not found - return 404 response
+if (!product) {
+  return new Response(null, {
+    status: 404,
+    statusText: 'Not Found'
+  });
+}
+// --- End Server-side Data Fetching ---
+
+// Note: getStaticPaths is not needed for basic server rendering based on params,
+// but might be kept for specific adapter features or hybrid mode.
+// We comment it out for clarity as it's not passing props here.
+// export async function getStaticPaths() {
+//   return products.map((product) => ({
+//     params: { id: product.id },
+//   }));
+// }
+
+// // Old way (relied on props from getStaticPaths in static mode)
+// const { product } = Astro.props as { product: Product };
+---
+
+{/* The 'product' variable is now available from the server-side fetch above */}
+<Layout title={product.name}>
+  <div class="max-w-7xl mx-auto px-4 py-12">
+    <div class="grid md:grid-cols-2 gap-8">
+      <!-- Galería de imágenes -->
+      <div>
+        <img 
+          src={product.images[0]} 
+          alt={product.name}
+          class="w-full rounded-lg"
+        />
+        <div class="grid grid-cols-4 gap-2 mt-4">
+          {product.images.map((img, index) => (
+            <img
+              src={img}
+              alt={`Vista ${index + 1} de ${product.name}`}
+              class="cursor-pointer hover:opacity-75 rounded"
+            />
+          ))}
+        </div>
+      </div>
+      
+      <!-- Detalles del producto -->
+      <div>
+        <h1 class="text-3xl font-light">{product.name}</h1>
+        
+        <div class="mt-4">
+          {product.compareAtPrice && (
+            <span class="text-gray-500 line-through mr-2">
+              ${formatPriceCLP(product.compareAtPrice)} {/* Format compare price */}
+            </span>
+          )}
+          <span class="text-2xl">${formatPriceCLP(product.price)}</span> {/* Format main price */}
+        </div>
+        
+        {/* Variantes */}
+        {product.variants?.map((variant) => (
+          <div class="mt-6">
+            <h3 class="text-sm font-medium">{variant.name}</h3>
+            <div class="flex gap-2 mt-2">
+              {variant.options.map((option) => (
+                <button 
+                  type="button"
+                  class="px-3 py-1 border rounded text-sm hover:bg-gray-100"
+                >
+                  {option}
+                </button>
+              ))}
+            </div>
+          </div>
+        ))}
+        
+        <div class="mt-8">
+          {/* Replace static button with the interactive component */}
+          <AddToCartButton client:load product={{ id: product.id, name: product.name, price: product.price }} />
+        </div>
+        
+        <div class="mt-8 pt-8 border-t">
+          <h3 class="font-medium">Descripción</h3>
+          <p class="mt-2 text-gray-600">{product.description}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</Layout>

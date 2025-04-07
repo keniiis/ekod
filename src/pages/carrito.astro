@@ -1,0 +1,14 @@
+---
+import Layout from '../layouts/Layout.astro';
+import CartContents from '../components/CartContents.tsx'; // Import the new component
+---
+
+<Layout title="Carrito | Mi Tienda">
+  <div class="max-w-7xl mx-auto px-4 py-8">
+    <h1 class="text-2xl font-light mb-8">Carrito</h1>
+
+    {/* Render the interactive cart component */}
+    <CartContents client:load /> 
+    
+  </div>
+</Layout>

@@ -6,8 +6,8 @@ import AddToCartButton from '../../components/AddToCartButton.tsx';
 import { formatPriceCLP } from '../../utils/formatting'; // Import the formatter
 
 // --- Server-side Data Fetching (for output: 'server') ---
-const { id } = Astro.params; // Get ID from URL parameters
-const product = products.find((p) => p.id === id); // Find product by ID
+const { slug } = Astro.params; // Get SLUG from URL parameters
+const product = products.find((p) => p.slug === slug); // Find product by SLUG
 
 // Handle product not found - return 404 response
 if (!product) {
@@ -16,6 +16,12 @@ if (!product) {
     statusText: 'Not Found'
   });
 }
+
+// Generate dynamic title and description
+const pageTitle = `${product.name} - Compra Ahora`;
+// Basic description - ideally, this would be more unique per product in the data source
+const pageDescription = `Compra ${product.name} en Minimal Shop. ${product.description.substring(0, 120)}... Alta calidad y diseño minimalista.`; 
+
 // --- End Server-side Data Fetching ---
 
 // Note: getStaticPaths is not needed for basic server rendering based on params,
@@ -31,8 +37,8 @@ if (!product) {
 // const { product } = Astro.props as { product: Product };
 ---
 
-{/* The 'product' variable is now available from the server-side fetch above */}
-<Layout title={product.name}>
+{/* Pass dynamic title and description to Layout */}
+<Layout title={pageTitle} description={pageDescription}>
   <div class="max-w-7xl mx-auto px-4 py-12">
     <div class="grid md:grid-cols-2 gap-8">
       <!-- Galería de imágenes -->
@@ -84,8 +90,8 @@ if (!product) {
         ))}
         
         <div class="mt-8">
-          {/* Replace static button with the interactive component */}
-          <AddToCartButton client:load product={{ id: product.id, name: product.name, price: product.price }} />
+          {/* Pass the images array to the button */}
+          <AddToCartButton client:load product={{ id: product.id, name: product.name, price: product.price, images: product.images }} />
         </div>
         
         <div class="mt-8 pt-8 border-t">

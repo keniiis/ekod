@@ -5,11 +5,13 @@ import { products } from '../data/products';
 
 // Obtener categorías únicas
 const categories = Array.from(new Set(products.map(p => p.category)));
+const pageTitle = "Tienda - Explora Nuestra Colección Minimalista";
+const pageDescription = "Encuentra ropa, accesorios y más en la tienda de Minimal Shop. Productos de alta calidad con diseño minimalista para tu estilo de vida.";
 ---
 
-<Layout title="Tienda | Minimal Shop">
+<Layout title={pageTitle} description={pageDescription}>
   <div class="max-w-7xl mx-auto px-4 py-8">
-    <h1 class="text-2xl font-light mb-8">Productos</h1>
+    <h1 class="text-2xl font-light mb-8">{pageTitle}</h1> {/* Use title in H1 */}
     
     <div class="flex flex-col md:flex-row gap-8">
       <!-- Filtros -->

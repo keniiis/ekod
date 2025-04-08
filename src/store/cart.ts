@@ -7,11 +7,13 @@ interface CartItem {
   name: string;
   price: number;
   quantity: number;
+  image: string; // Add image field
 }
 
 interface CartStore {
   items: CartItem[];
-  addItem: (item: Omit<CartItem, 'quantity'>) => void;
+  // Update addItem parameter type to include image
+  addItem: (item: Omit<CartItem, 'quantity'>) => void; 
   removeItem: (id: string) => void;
   updateQuantity: (id: string, quantity: number) => void;
   clearCart: () => void;

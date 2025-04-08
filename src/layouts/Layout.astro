@@ -1,11 +1,14 @@
 ---
 import CartDropdown from '../components/CartDropdown';
+import logoSrc from '../assets/logo_EKOD_store.jpg'; // Import the logo image
+import BannerPromocional from '../components/BannerPromocional.astro'; // Import the banner
 
 interface Props {
   title: string;
+  description?: string; // Add optional description prop
 }
 
-const { title } = Astro.props;
+const { title, description = 'Tienda online minimalista con productos de alta calidad.' } = Astro.props; // Provide a default description
 ---
 
 <!doctype html>
@@ -15,21 +18,41 @@ const { title } = Astro.props;
     <meta name="viewport" content="width=device-width" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="generator" content={Astro.generator} />
-    <title>{title}</title>
+    <title>{title} | MINIMAL SHOP</title> {/* Append site name for consistency */}
+    <meta name="description" content={description} /> {/* Add meta description tag */}
+    {/* Basic Open Graph / Twitter Card Tags */}
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    {/* <meta property="og:image" content={Astro.url.origin + '/default-og-image.png'} /> You'd add a default image here */}
+    <meta property="og:url" content={Astro.url.toString()} />
+    <meta property="og:site_name" content="MINIMAL SHOP" />
+    <meta name="twitter:card" content="summary_large_image" />
+    {/* <meta name="twitter:image:alt" content={`Preview for ${title}`} /> */}
+    
+    {/* Canonical URL */}
+    <link rel="canonical" href={Astro.url.toString()} />
+
     {/* Mercado Pago SDK will be loaded dynamically by CheckoutForm.tsx */}
   </head>
   <body class="min-h-screen bg-white text-gray-900 font-sans">
+    {/* Render BannerPromocional at the very top */}
+    <BannerPromocional /> 
+    
     <!-- Header estilo Shopify -->
-    <header class="border-b border-gray-200 bg-white sticky top-0 z-50">
+    <header class="border-b border-gray-200 bg-white sticky top-0 z-50"> {/* Header remains sticky below banner */}
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between items-center h-16">
+        {/* Change h-16 to h-[100px] */}
+        <div class="flex justify-between items-center h-[100px]"> 
           <!-- Logo -->
           <div class="flex items-center">
-            <a href="/" class="text-xl font-medium tracking-tight">MINIMAL SHOP</a>
+            <a href="/" class="text-xl font-medium tracking-tight">
+              {/* Adjust logo height slightly, e.g., h-20 (80px) */}
+              <img src={logoSrc.src} alt="Logo de EKOD Store" class="h-20" /> 
+            </a>
           </div>
 
-          <!-- Navegación principal -->
-          <nav class="hidden md:flex space-x-8">
+          <!-- Navegación principal - Added flex-grow and justify-center -->
+          <nav class="hidden md:flex flex-grow justify-evenly space-x-8">
             <a href="/tienda" class="text-sm font-medium hover:text-gray-600">Tienda</a>
             <a href="/blog" class="text-sm font-medium hover:text-gray-600">Blog</a>
             <a href="/sobre-nosotros" class="text-sm font-medium hover:text-gray-600">Nosotros</a>

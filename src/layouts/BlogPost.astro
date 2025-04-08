@@ -2,9 +2,13 @@
 import Layout from './Layout.astro';
 
 const { frontmatter } = Astro.props;
+
+// Use frontmatter.excerpt for description, or a default if not present
+const pageTitle = frontmatter.title;
+const pageDescription = frontmatter.excerpt || `Lee el artículo "${frontmatter.title}" en el blog de Minimal Shop.`;
 ---
 
-<Layout title={`${frontmatter.title} | Mi Tienda`}>
+<Layout title={pageTitle} description={pageDescription}>
   <article class="max-w-4xl mx-auto px-4 py-12">
     {frontmatter.image && (
       <img

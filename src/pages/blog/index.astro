@@ -1,11 +1,13 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 const posts = await Astro.glob('./posts/*.mdx');
+const pageTitle = "Blog - Consejos y Tendencias de Estilo Minimalista";
+const pageDescription = "Explora el blog de Minimal Shop para obtener consejos sobre moda minimalista, tendencias, cuidado de prendas y más. Inspírate para un estilo de vida simple y elegante.";
 ---
 
-<Layout title="Blog | Mi Tienda">
+<Layout title={pageTitle} description={pageDescription}>
   <div class="max-w-7xl mx-auto px-4 py-12">
-    <h1 class="text-3xl font-bold mb-8">Blog</h1>
+    <h1 class="text-3xl font-light mb-8">{pageTitle}</h1> {/* Use title in H1 */}
     
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
       {posts.map(post => (

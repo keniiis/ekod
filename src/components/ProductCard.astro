@@ -1,6 +1,7 @@
 ---
 // Importa el tipo Product correctamente
 import type { Product } from '../data/products';
+import { formatPriceCLP } from '../utils/formatting'; // Import the formatting function
 
 // Define las props con el tipo correcto
 interface Props {
@@ -12,7 +13,7 @@ const { product } = Astro.props;
 ---
 
 <article class="group relative">
-  <a href={`/producto/${product.id}`} class="block">
+  <a href={`/producto/${product.slug}`} class="block"> {/* Use product.slug here */}
     <!-- Imagen del producto -->
     <div class="aspect-square bg-gray-50 mb-3 overflow-hidden rounded">
       {product.images[0] ? (
@@ -40,10 +41,10 @@ const { product } = Astro.props;
         <p class="text-xs text-gray-500 mb-2 capitalize">{product.category}</p>
       )}
       <p class="text-sm font-medium text-gray-900">
-        ${product.price.toFixed(2)}
+        ${formatPriceCLP(product.price)} {/* Use the formatting function */}
         {product.compareAtPrice && (
           <span class="ml-2 text-xs text-gray-500 line-through">
-            ${product.compareAtPrice.toFixed(2)}
+            ${formatPriceCLP(product.compareAtPrice)} {/* Use the formatting function */}
           </span>
         )}
       </p>

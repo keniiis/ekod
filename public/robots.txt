@@ -1,0 +1,9 @@
+# Allow all friendly web crawlers
+User-agent: *
+Allow: /
+
+# Disallow crawling API routes
+Disallow: /api/
+
+# Sitemap location
+Sitemap: https://www.ekod.store/sitemap-index.xml

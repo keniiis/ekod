@@ -1,28 +1,40 @@
-import React from 'react';
+import React from 'react'; // Removed useState and useEffect
 import { useCartStore } from '../store/cart';
-import type { Product } from '../data/products'; // Assuming Product type is exported
+// Assuming Product type is exported from data/products, but we only need specific fields
+// We receive simple types from Astro now for price/image
 
-// Define props for the component, now including images
+// Define props for the component
 interface AddToCartButtonProps {
-  product: Pick<Product, 'id' | 'name' | 'price' | 'images'>; // Add 'images'
+  product: {
+    id: string;
+    name: string;
+    price: number; // Initial price
+    images: string[]; // Image URL array reflecting the selected variant
+  };
+  variant?: string | null; // Variant name string reflecting the selected variant (e.g., "Unidades: 6")
 }
 
-const AddToCartButton: React.FC<AddToCartButtonProps> = ({ product }) => {
+
+const AddToCartButton: React.FC<AddToCartButtonProps> = ({ product, variant }) => {
   // Get the addItem function from the Zustand store
   const addItem = useCartStore((state) => state.addItem);
 
   const handleAddToCart = () => {
-    // Ensure there's at least one image, provide a fallback if needed
-    const imageUrl = product.images && product.images.length > 0 ? product.images[0] : 'https://placehold.co/100x100?text=No+Image'; 
+    // Use the props directly, as they are updated by the parent component
+    const itemToAdd = {
+      // Generate a unique ID for the cart item, including the variant
+      // Example: 'product-1-unidades-6'
+      id: variant ? `${product.id}-${variant.replace(/[^a-z0-9]/gi, '-').toLowerCase()}` : product.id, 
+      name: variant ? `${product.name} (${variant})` : product.name, // Add variant to name
+      price: product.price, // Use the price from the product prop (updated by parent)
+      image: product.images?.[0] ?? 'https://placehold.co/100x100?text=No+Image', // Use the image from the product prop
+      productId: product.id, // Keep original product ID if needed
+      variantName: variant // Store variant name separately if needed by cart logic
+    };
     
-    addItem({
-      id: product.id,
-      name: product.name,
-      price: product.price,
-      image: imageUrl, // Pass the image URL
-    });
-    // Optional: Add some user feedback, like showing a notification or changing button text
-    console.log(`${product.name} added to cart`); 
+    addItem(itemToAdd);
+
+    console.log(`${itemToAdd.name} added to cart with price ${itemToAdd.price}`); 
   };
 
   return (

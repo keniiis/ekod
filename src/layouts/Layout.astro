@@ -1,6 +1,6 @@
 ---
 import CartDropdown from '../components/CartDropdown';
-import logoSrc from '../assets/logo_EKOD_store.jpg'; // Import the logo image
+// Removed logo import
 import BannerPromocional from '../components/BannerPromocional.astro'; // Import the banner
 
 interface Props {
@@ -16,16 +16,22 @@ const { title, description = 'Tienda online minimalista con productos de alta ca
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" href="/favicon.png" type="image/png" /> {/* Use PNG for favicon */}
     <meta name="generator" content={Astro.generator} />
-    <title>{title} | MINIMAL SHOP</title> {/* Append site name for consistency */}
+    <title>{title} | EKOD store Chile</title> {/* Append site name for consistency */}
     <meta name="description" content={description} /> {/* Add meta description tag */}
+    <meta name="keywords" content="artículos prácticos, hogar, oficina, accesorios originales, tienda online Chile, EKOD Store">
+    <meta name="author" content="EKOD Store" />
+    <meta name="publisher" content="EKOD Store" /> {/* Add publisher meta tag */}
+    <meta name="robots" content="index, follow" /> {/* Allow search engines to index the page */}
+    
+    {/* Open Graph / Facebook Tags */}
     {/* Basic Open Graph / Twitter Card Tags */}
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     {/* <meta property="og:image" content={Astro.url.origin + '/default-og-image.png'} /> You'd add a default image here */}
     <meta property="og:url" content={Astro.url.toString()} />
-    <meta property="og:site_name" content="MINIMAL SHOP" />
+    <meta property="og:site_name" content="EKOD store" />
     <meta name="twitter:card" content="summary_large_image" />
     {/* <meta name="twitter:image:alt" content={`Preview for ${title}`} /> */}
     
@@ -47,7 +53,7 @@ const { title, description = 'Tienda online minimalista con productos de alta ca
           <div class="flex items-center">
             <a href="/" class="text-xl font-medium tracking-tight">
               {/* Adjust logo height slightly, e.g., h-20 (80px) */}
-              <img src={logoSrc.src} alt="Logo de EKOD Store" class="h-20" /> 
+              <img src="/assets/logo_EKOD_store.webp" alt="Logo de EKOD Store" class="h-20" /> {/* Removed loading="lazy" for eager loading */}
             </a>
           </div>
 
@@ -61,6 +67,29 @@ const { title, description = 'Tienda online minimalista con productos de alta ca
           <!-- Iconos de usuario/carrito -->
           <div class="flex items-center space-x-4">
             <CartDropdown client:load />
+            {/* Mobile menu button */}
+            <div class="md:hidden flex items-center">
+              <button id="mobile-menu-button" type="button" class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500" aria-controls="mobile-menu" aria-expanded="false">
+                <span class="sr-only">Open main menu</span>
+                {/* Icon when menu is closed. */}
+                <svg class="block h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
+                </svg>
+                {/* Icon when menu is open. */}
+                <svg class="hidden h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Mobile menu, show/hide based on menu state. */}
+        <div class="md:hidden hidden" id="mobile-menu">
+          <div class="pt-2 pb-3 space-y-1 px-2 sm:px-3">
+            <a href="/tienda" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50">Tienda</a>
+            <a href="/blog" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50">Blog</a>
+            <a href="/sobre-nosotros" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50">Nosotros</a>
           </div>
         </div>
       </div>
@@ -75,7 +104,7 @@ const { title, description = 'Tienda online minimalista con productos de alta ca
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div>
-            <h3 class="text-sm font-semibold tracking-wider uppercase mb-4">MINIMAL SHOP</h3>
+            <h3 class="text-sm font-semibold tracking-wider uppercase mb-4">EKOD store</h3>
             <p class="text-sm text-gray-500">Tu tienda minimalista de confianza</p>
           </div>
           <div>
@@ -104,9 +133,35 @@ const { title, description = 'Tienda online minimalista con productos de alta ca
           </div>
         </div>
         <div class="mt-12 border-t border-gray-200 pt-8 text-sm text-gray-500 text-center">
-          &copy; {new Date().getFullYear()} Minimal Shop. Todos los derechos reservados.
+          &copy; {new Date().getFullYear()} EKOD store. Todos los derechos reservados.
         </div>
       </div>
     </footer>
+
+    <script>
+      const btn = document.getElementById('mobile-menu-button');
+      const menu = document.getElementById('mobile-menu');
+
+      if (btn) {
+        const openIcon = btn.querySelector('svg:first-of-type');
+        const closeIcon = btn.querySelector('svg:last-of-type');
+
+        btn.addEventListener('click', () => {
+          const isExpanded = btn.getAttribute('aria-expanded') === 'true';
+          btn.setAttribute('aria-expanded', String(!isExpanded));
+          if (menu) {
+            menu.classList.toggle('hidden');
+          }
+          if (openIcon) {
+            openIcon.classList.toggle('hidden');
+            openIcon.classList.toggle('block');
+          }
+          if (closeIcon) {
+            closeIcon.classList.toggle('hidden');
+            closeIcon.classList.toggle('block');
+          }
+        });
+      }
+    </script>
   </body>
 </html>

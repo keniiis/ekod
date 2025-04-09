@@ -1,0 +1,42 @@
+---
+import Layout from '../layouts/Layout.astro';
+
+const pageTitle = "Sobre Nosotros";
+const pageDescription = "Descubre quiénes somos en EKOD Store: una tienda online curada con productos funcionales, estéticos y de calidad para tu día a día.";
+---
+
+<Layout title={pageTitle} description={pageDescription}>
+  <div class="max-w-4xl mx-auto px-4 py-12">
+    <h1 class="text-3xl md:text-4xl font-light text-center mb-8">{pageTitle}</h1>
+
+    <div class="prose prose-lg max-w-none text-gray-700 space-y-6">
+      <p>
+        En <strong>EKOD Store</strong> creemos que los objetos que usamos día a día deberían hacernos la vida más fácil, cómoda y placentera. Por eso, seleccionamos cuidadosamente productos que combinan funcionalidad, diseño minimalista y practicidad.
+      </p>
+
+      <h2 class="text-2xl font-medium !mt-10 !mb-4">¿Quiénes Somos?</h2>
+      <p>
+        EKOD Store nació con la idea de hacer más accesibles productos originales y útiles, sin sacrificar la estética ni la calidad. No somos un retail tradicional: curamos cada pieza con intención, priorizando artículos que realmente marquen la diferencia en tu hogar, oficina o rutina diaria.
+      </p>
+
+      <h2 class="text-2xl font-medium !mt-10 !mb-4">Nuestra Misión</h2>
+      <p>
+        Queremos inspirarte a simplificar tu vida sin perder estilo. Buscamos acercarte productos que te hagan sentir bien, que funcionen, y que tengan un diseño cuidado. Nuestro compromiso es seleccionar solo lo que nosotros mismos usaríamos.
+      </p>
+
+      <h2 class="text-2xl font-medium !mt-10 !mb-4">Lo que Ofrecemos</h2>
+      <p>
+        No fabricamos directamente los artículos que vendemos, pero sí realizamos una selección rigurosa de proveedores y productos. Evaluamos calidad, durabilidad, diseño y funcionalidad, y actualizamos constantemente nuestro catálogo para ofrecerte lo mejor.
+      </p>
+
+      <h2 class="text-2xl font-medium !mt-10 !mb-4">Tu Confianza, Nuestro Compromiso</h2>
+      <p>
+        Sabemos que comprar online requiere confianza. Por eso, en EKOD Store te ofrecemos una experiencia de compra clara, segura y cercana. Si tienes dudas, estamos aquí para ayudarte. Tu satisfacción nos importa, y trabajamos para que te sientas acompañado antes, durante y después de tu compra.
+      </p>
+
+      <p class="text-center !mt-12">
+        Gracias por ser parte de EKOD Store. Explora, descubre y elige artículos que conecten con tu estilo de vida.
+      </p>
+    </div>
+  </div>
+</Layout>

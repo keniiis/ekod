@@ -1,7 +1,8 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import ProductCard from '../components/ProductCard.astro';
+// Removed import for ProductCard.astro as it's now handled by React
 import { products } from '../data/products';
+import ShopInterface from '../components/ShopInterface.tsx'; // Import the new React component
 
 // Obtener categorías únicas
 const categories = Array.from(new Set(products.map(p => p.category)));
@@ -13,36 +14,8 @@ const pageDescription = "Encuentra ropa, accesorios y más en la tienda de Minim
   <div class="max-w-7xl mx-auto px-4 py-8">
     <h1 class="text-2xl font-light mb-8">{pageTitle}</h1> {/* Use title in H1 */}
     
-    <div class="flex flex-col md:flex-row gap-8">
-      <!-- Filtros -->
-      <aside class="md:w-64">
-        <div class="space-y-6">
-          <!-- Filtro por categorías -->
-          <div>
-            <h3 class="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-3">Categorías</h3>
-            <ul class="space-y-2">
-              {categories.map(category => (
-                <li>
-                  <label class="flex items-center space-x-2">
-                    <input 
-                      type="checkbox" 
-                      class="rounded border-gray-300 text-black focus:ring-black"
-                    />
-                    <span class="text-sm capitalize">{category}</span>
-                  </label>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      </aside>
-
-      <!-- Lista de productos -->
-      <div class="flex-1 grid grid-cols-2 md:grid-cols-3 gap-4">
-        {products.map(product => (
-          <ProductCard product={product} />
-        ))}
-      </div>
-    </div>
+    {/* Render the React Shop Interface component */}
+    {/* Pass products and categories, and load client-side */}
+    <ShopInterface client:load products={products} categories={categories} />
   </div>
 </Layout>

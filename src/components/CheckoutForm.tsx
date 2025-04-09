@@ -1,4 +1,5 @@
 import React, { useMemo, useEffect, useState, useRef } from 'react'; // Import hooks
+import type { FormEvent } from 'react'; // Import FormEvent as a type
 import { useCartStore } from '../store/cart';
 import { formatPriceCLP } from '../utils/formatting'; // Import the formatter
 
@@ -21,7 +22,17 @@ const CheckoutForm: React.FC = () => {
   const mpInstanceRef = useRef<any>(null); // Ref to store MercadoPago instance
   const [isStoreHydrated, setIsStoreHydrated] = useState(false); // Track Zustand hydration
   const [isFlowLoading, setIsFlowLoading] = useState(false); // State for Flow loading
-  const [customerEmail, setCustomerEmail] = useState(''); // State for customer email input
+
+  // --- State for Customer Details ---
+  const [customerEmail, setCustomerEmail] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [address, setAddress] = useState('');
+  const [region, setRegion] = useState(''); // Consider using a <select> for regions/communes later
+  const [commune, setCommune] = useState('');
+  const [observations, setObservations] = useState('');
+  // ---------------------------------
 
   const subtotal = useMemo(() => {
     return items.reduce((acc, item) => acc + item.price * item.quantity, 0);
@@ -246,15 +257,45 @@ const CheckoutForm: React.FC = () => {
   // Remove the handleMercadoPago function as createCheckoutBrick is called automatically
 
   // Handler for Flow/Webpay button click
-  const handleFlowPaymentClick = async () => {
-    // Basic email validation
+  const handleFlowPaymentClick = async (event: FormEvent) => {
+    event.preventDefault(); // Prevent default form submission if wrapped in <form> later
+
+    // --- Basic Validation for all required fields ---
     if (!customerEmail || !/\S+@\S+\.\S+/.test(customerEmail)) {
       alert('Por favor, ingresa un correo electrónico válido.');
       return;
     }
+    if (!firstName) { alert('Por favor, ingresa tu nombre.'); return; }
+    if (!lastName) { alert('Por favor, ingresa tu apellido.'); return; }
+    if (!phone) { alert('Por favor, ingresa tu teléfono.'); return; } // Add more specific validation later if needed
+    if (!address) { alert('Por favor, ingresa tu dirección.'); return; }
+    if (!region) { alert('Por favor, ingresa tu región.'); return; }
+    if (!commune) { alert('Por favor, ingresa tu comuna.'); return; }
+    // Observations are optional
+    // -------------------------------------------------
+
+    // --- Log all collected data (for now) ---
+    const customerData = {
+        email: customerEmail,
+        firstName,
+        lastName,
+        phone,
+        address,
+        region,
+        commune,
+        observations,
+        amount: total // Include total amount
+    };
+    console.log('Customer Data Collected:', customerData);
+    // -----------------------------------------
+
     console.log('Initiating Flow payment for email:', customerEmail);
     setIsFlowLoading(true);
     try {
+      // **IMPORTANT:** We are still only sending email and amount here.
+      // The backend needs modification to handle the full customerData,
+      // and ideally, we'd only send necessary info to start payment,
+      // storing the rest securely until webhook confirmation.
       const response = await fetch('/api/create-flow-payment', {
         method: 'POST',
         headers: {
@@ -299,22 +340,130 @@ const CheckoutForm: React.FC = () => {
 
   return (
     <div className="bg-gray-50 p-8 rounded-lg shadow-sm">
-      <h2 className="text-xl font-medium mb-6">Resumen del Pedido</h2>
+      <h2 className="text-xl font-medium mb-6">Información de Envío y Contacto</h2>
 
-      {/* Simple Email Input */}
-      <div className="mb-6">
+      {/* --- Customer Details Form Fields --- */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 mb-6">
+        {/* First Name */}
+        <div>
+          <label htmlFor="first-name" className="block text-sm font-medium text-gray-700 mb-1">Nombre(s)</label>
+          <input
+            type="text"
+            id="first-name"
+            value={firstName}
+            onChange={(e) => setFirstName(e.target.value)}
+            required
+            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          />
+        </div>
+
+        {/* Last Name */}
+        <div>
+          <label htmlFor="last-name" className="block text-sm font-medium text-gray-700 mb-1">Apellido(s)</label>
+          <input
+            type="text"
+            id="last-name"
+            value={lastName}
+            onChange={(e) => setLastName(e.target.value)}
+            required
+            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          />
+        </div>
+
+        {/* Email */}
+        <div>
           <label htmlFor="customer-email" className="block text-sm font-medium text-gray-700 mb-1">Correo Electrónico</label>
-          <input 
-            type="email" 
+          <input
+            type="email"
             id="customer-email"
             value={customerEmail}
             onChange={(e) => setCustomerEmail(e.target.value)}
             placeholder="tu@correo.com"
-            required 
+            required
             className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
           />
+        </div>
+
+        {/* Phone */}
+        <div>
+          <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">Teléfono</label>
+          <div className="relative rounded-md shadow-sm">
+             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+               <span className="text-gray-500 sm:text-sm">+56</span>
+             </div>
+             <input
+               type="tel"
+               id="phone"
+               value={phone}
+               onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))} // Allow only digits
+               placeholder="9xxxxxxxx"
+               required
+               className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" // Added pl-10 for prefix
+             />
+          </div>
+        </div>
+
+        {/* Address */}
+        <div className="md:col-span-2">
+          <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-1">Dirección (Calle y Número)</label>
+          <input
+            type="text"
+            id="address"
+            value={address}
+            onChange={(e) => setAddress(e.target.value)}
+            placeholder="Ej: Av. Siempre Viva 742"
+            required
+            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          />
+        </div>
+
+         {/* Region */}
+        <div>
+          <label htmlFor="region" className="block text-sm font-medium text-gray-700 mb-1">Región</label>
+          {/* TODO: Replace with a <select> populated with Chilean regions */}
+          <input
+            type="text"
+            id="region"
+            value={region}
+            onChange={(e) => setRegion(e.target.value)}
+            placeholder="Ej: Metropolitana"
+            required
+            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          />
+        </div>
+
+        {/* Commune */}
+        <div>
+          <label htmlFor="commune" className="block text-sm font-medium text-gray-700 mb-1">Comuna</label>
+           {/* TODO: Replace with a <select> populated based on selected region */}
+          <input
+            type="text"
+            id="commune"
+            value={commune}
+            onChange={(e) => setCommune(e.target.value)}
+            placeholder="Ej: Santiago"
+            required
+            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          />
+        </div>
+
+        {/* Observations */}
+        <div className="md:col-span-2">
+          <label htmlFor="observations" className="block text-sm font-medium text-gray-700 mb-1">Observación para el transportista (Opcional)</label>
+          <textarea
+            id="observations"
+            value={observations}
+            onChange={(e) => setObservations(e.target.value)}
+            rows={3}
+            placeholder="Ej: Dejar en conserjería, timbre malo..."
+            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          ></textarea>
+        </div>
       </div>
-      
+      {/* --- End Customer Details --- */}
+
+
+      <h2 className="text-xl font-medium mb-6">Resumen del Pedido</h2>
       {/* Order Summary Table */}
       <table className="w-full text-sm mb-6">
         <thead>

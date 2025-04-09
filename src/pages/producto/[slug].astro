@@ -1,104 +1,45 @@
 ---
-// src/pages/producto/[id].astro
+// src/pages/producto/[slug].astro - Refactored to use React Component
 import Layout from '../../layouts/Layout.astro';
 import { products, type Product } from '../../data/products';
-import AddToCartButton from '../../components/AddToCartButton.tsx';
-import { formatPriceCLP } from '../../utils/formatting'; // Import the formatter
+import ProductDetails from '../../components/ProductDetails.tsx'; // Import the Product Details React component
+import ProductTabs from '../../components/ProductTabs.tsx'; // Import the new Product Tabs React component
 
-// --- Server-side Data Fetching (for output: 'server') ---
-const { slug } = Astro.params; // Get SLUG from URL parameters
-const product = products.find((p) => p.slug === slug); // Find product by SLUG
+// --- Server-side Data Fetching (SSR Mode) ---
+// REMOVED getStaticPaths - Not used in output: 'server' mode for dynamic routes
 
-// Handle product not found - return 404 response
+// Find the product based on the slug from the URL params
+const { slug } = Astro.params;
+const product = products.find((p) => p.slug === slug);
+
+// Handle case where product is not found for the given slug
 if (!product) {
-  return new Response(null, {
-    status: 404,
-    statusText: 'Not Found'
-  });
+  return new Response(null, { status: 404, statusText: 'Not Found' });
 }
 
-// Generate dynamic title and description
+// --- Prepare Page Metadata ---
 const pageTitle = `${product.name} - Compra Ahora`;
-// Basic description - ideally, this would be more unique per product in the data source
-const pageDescription = `Compra ${product.name} en Minimal Shop. ${product.description.substring(0, 120)}... Alta calidad y diseño minimalista.`; 
+const pageDescription = `Compra ${product.name} en EKOD Store. ${product.description.substring(0, 120)}...`;
 
-// --- End Server-side Data Fetching ---
-
-// Note: getStaticPaths is not needed for basic server rendering based on params,
-// but might be kept for specific adapter features or hybrid mode.
-// We comment it out for clarity as it's not passing props here.
-// export async function getStaticPaths() {
-//   return products.map((product) => ({
-//     params: { id: product.id },
-//   }));
-// }
-
-// // Old way (relied on props from getStaticPaths in static mode)
-// const { product } = Astro.props as { product: Product };
+// NOTE: Removed Alpine-specific data preparation (alpineStoreData)
 ---
-
-{/* Pass dynamic title and description to Layout */}
 <Layout title={pageTitle} description={pageDescription}>
+  {/* REMOVED Drift Zoom CSS and JS links */}
+
   <div class="max-w-7xl mx-auto px-4 py-12">
-    <div class="grid md:grid-cols-2 gap-8">
-      <!-- Galería de imágenes -->
-      <div>
-        <img 
-          src={product.images[0]} 
-          alt={product.name}
-          class="w-full rounded-lg"
-        />
-        <div class="grid grid-cols-4 gap-2 mt-4">
-          {product.images.map((img, index) => (
-            <img
-              src={img}
-              alt={`Vista ${index + 1} de ${product.name}`}
-              class="cursor-pointer hover:opacity-75 rounded"
-            />
-          ))}
-        </div>
-      </div>
-      
-      <!-- Detalles del producto -->
-      <div>
-        <h1 class="text-3xl font-light">{product.name}</h1>
-        
-        <div class="mt-4">
-          {product.compareAtPrice && (
-            <span class="text-gray-500 line-through mr-2">
-              ${formatPriceCLP(product.compareAtPrice)} {/* Format compare price */}
-            </span>
-          )}
-          <span class="text-2xl">${formatPriceCLP(product.price)}</span> {/* Format main price */}
-        </div>
-        
-        {/* Variantes */}
-        {product.variants?.map((variant) => (
-          <div class="mt-6">
-            <h3 class="text-sm font-medium">{variant.name}</h3>
-            <div class="flex gap-2 mt-2">
-              {variant.options.map((option) => (
-                <button 
-                  type="button"
-                  class="px-3 py-1 border rounded text-sm hover:bg-gray-100"
-                >
-                  {option}
-                </button>
-              ))}
-            </div>
-          </div>
-        ))}
-        
-        <div class="mt-8">
-          {/* Pass the images array to the button */}
-          <AddToCartButton client:load product={{ id: product.id, name: product.name, price: product.price, images: product.images }} />
-        </div>
-        
-        <div class="mt-8 pt-8 border-t">
-          <h3 class="font-medium">Descripción</h3>
-          <p class="mt-2 text-gray-600">{product.description}</p>
-        </div>
-      </div>
-    </div>
+    {/* Render the React component, passing product data */}
+    {/* client:load ensures it hydrates and runs client-side */}
+    <ProductDetails client:load product={product} />
+
+    {/* Render the React Tabs component */}
+    <ProductTabs client:load description={product.description} />
+    {/* Pass other props like specifications={product.specifications} if available */}
+
   </div>
 </Layout>
+<style>
+  /* REMOVED x-cloak style */
+  /* REMOVED Drift-specific styles */
+  /* Styles needed by React component (if any) */
+  .product-image-container { position: relative; } /* Keep relative positioning */
+</style>

@@ -41,8 +41,14 @@ const CartContents: React.FC = () => {
           <ul className="space-y-4">
             {items.map((item) => (
               <li key={item.id} className="flex items-center gap-4 border-b border-gray-100 pb-4">
-                {/* Basic image placeholder - replace if you have images */}
-                <div className="w-16 h-16 bg-gray-100 rounded flex-shrink-0"></div> 
+                {/* Display the actual item image */}
+                <img 
+                  src={item.image} 
+                  alt={item.name} 
+                  width={64} 
+                  height={64} 
+                  className="w-16 h-16 rounded object-cover flex-shrink-0 border" // Added border for visibility
+                />
                 <div className="flex-1">
                   <p className="font-medium">{item.name}</p>
                   {/* Format item price */}

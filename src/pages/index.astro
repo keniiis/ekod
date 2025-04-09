@@ -1,16 +1,18 @@
 ---
 import Layout from '../layouts/Layout.astro';
 // BannerPromocional is no longer needed here, it's in Layout.astro
-import ColeccionesGrid from '../components/ColeccionesGrid.astro';
+// Removed ColeccionesGrid import
+import WhyChooseUs from '../components/WhyChooseUs.astro'; // Import the new component
 import ProductCard from '../components/ProductCard.astro';
 import TestimoniosClientes from '../components/TestimoniosClientes.astro';
 import NewsletterSignup from '../components/NewsletterSignup.astro';
 import { products } from '../data/products';
-import heroBannerSrc from '../assets/banner.png'; // Import the banner image
+import { Image } from 'astro:assets'; // Import the Image component
+// Removed banner import
 
 const featuredProducts = products.slice(0, 4);
-const pageTitle = "Minimal Shop - Ropa y Accesorios Minimalistas";
-const pageDescription = "Descubre Minimal Shop, tu tienda online de ropa y accesorios con diseño minimalista y de alta calidad. Encuentra estilo y simplicidad para tu vida.";
+const pageTitle = "Artículos Prácticos para tu Vida Diaria";
+const pageDescription = "Descubre productos útiles, originales y prácticos para tu vida diaria. Compra online en EKOD Store Chile con pago seguro y despacho a todo el país.";
 ---
 
 <Layout title={pageTitle} description={pageDescription}>
@@ -19,11 +21,14 @@ const pageDescription = "Descubre Minimal Shop, tu tienda online de ropa y acces
   {/* Hero Section */}
   <div class="relative bg-gray-100"> 
     <div class="absolute inset-0 overflow-hidden">
-      <img
-        src={heroBannerSrc.src} 
+      <Image
+        src="/assets/banner.webp" {/*Use direct public path*/}
         alt="Banner promocional de EKOD Store" 
         class="w-full h-full object-cover" 
-        loading="eager" 
+        loading="eager" {/* Keep eager loading for hero image */}
+        width={1920} {/* Required for images in public/ */}
+        height={1080} {/* Required for images in public/ */}
+        format="webp" {/* Optional: Suggest a format, though Astro might not convert public images */}
       />
     </div>
     {/* Restore original centering and padding/max-width */}
@@ -45,8 +50,8 @@ const pageDescription = "Descubre Minimal Shop, tu tienda online de ropa y acces
     </div>
   </div>
 
-  {/* Colecciones */}
-  <ColeccionesGrid />
+  {/* Why Choose Us Section */}
+  <WhyChooseUs />
 
   {/* Productos Destacados */}
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">

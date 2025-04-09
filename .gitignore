@@ -17,6 +17,9 @@ pnpm-debug.log*
 .env
 .env.production
 
+# secrets
+google-credentials.json
+
 # macOS-specific files
 .DS_Store
 

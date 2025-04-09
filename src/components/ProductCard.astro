@@ -2,6 +2,7 @@
 // Importa el tipo Product correctamente
 import type { Product } from '../data/products';
 import { formatPriceCLP } from '../utils/formatting'; // Import the formatting function
+import { Image } from 'astro:assets'; // Import the Image component
 
 // Define las props con el tipo correcto
 interface Props {
@@ -16,12 +17,16 @@ const { product } = Astro.props;
   <a href={`/producto/${product.slug}`} class="block"> {/* Use product.slug here */}
     <!-- Imagen del producto -->
     <div class="aspect-square bg-gray-50 mb-3 overflow-hidden rounded">
-      {product.images[0] ? (
-        <img 
-          src={product.images[0]} 
+      {/* Use defaultImage which contains src, width, height */}
+      {product.defaultImage ? (
+        <Image 
+          src={product.defaultImage.src}
+          width={product.defaultImage.width}
+          height={product.defaultImage.height}
           alt={product.name}
           class="w-full h-full object-cover transition duration-300 group-hover:opacity-90"
           loading="lazy"
+          format="webp" 
         />
       ) : (
         <div class="w-full h-full flex items-center justify-center bg-gray-100">
@@ -41,10 +46,12 @@ const { product } = Astro.props;
         <p class="text-xs text-gray-500 mb-2 capitalize">{product.category}</p>
       )}
       <p class="text-sm font-medium text-gray-900">
-        ${formatPriceCLP(product.price)} {/* Use the formatting function */}
-        {product.compareAtPrice && (
+        {/* Use defaultPrice */}
+        ${formatPriceCLP(product.defaultPrice)} 
+        {/* Use defaultCompareAtPrice */}
+        {product.defaultCompareAtPrice && (
           <span class="ml-2 text-xs text-gray-500 line-through">
-            ${formatPriceCLP(product.compareAtPrice)} {/* Use the formatting function */}
+            ${formatPriceCLP(product.defaultCompareAtPrice)} 
           </span>
         )}
       </p>

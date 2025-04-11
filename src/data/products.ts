@@ -66,34 +66,34 @@ const rawProducts = [
       src: '/assets/products/bolsa-de-almacenamiento/bolsa-de-almacenamiento-principal.webp', 
       width: 600, // Add actual width
       height: 600 // Add actual height
-    }, 
-    defaultPrice: 19990, // Set default price (for 3 units)
-    defaultCompareAtPrice: 29990, // Set default compare price (for 3 units)
+    },
+    defaultPrice: 1, // Set default price to 1 CLP
+    defaultCompareAtPrice: 10, // Adjust compare price
     variants: [
-      { 
-        name: 'Unidades', 
+      {
+        name: 'Unidades',
         options: [
-          { 
-            name: '3', 
-            price: 19990, 
+          {
+            name: '3',
+            price: 1, // Set price to 1 CLP
             // Use string paths relative to public/ and add dimensions
-            image: { 
-              src: '/assets/products/bolsa-de-almacenamiento/bolsa-de-almacenamiento-principal.webp', 
+            image: {
+              src: '/assets/products/bolsa-de-almacenamiento/bolsa-de-almacenamiento-principal.webp',
               width: 600, // Add actual width
               height: 600 // Add actual height
-            }, 
-            compareAtPrice: 29990 
+            },
+            compareAtPrice: 10 // Adjust compare price
           },
-          { 
-            name: '6', 
-            price: 29990, // Different price for 6 units
+          {
+            name: '6',
+            price: 1, // Set price to 1 CLP
             // Use string paths relative to public/ and add dimensions
-            image: { 
-              src: '/assets/products/bolsa-de-almacenamiento/bolsa-de-almacenamiento-6-unidades.webp', 
+            image: {
+              src: '/assets/products/bolsa-de-almacenamiento/bolsa-de-almacenamiento-6-unidades.webp',
               width: 600, // Add actual width
               height: 600 // Add actual height
-            }, 
-            compareAtPrice: 39990 // Optional: Different compare price for 6 units
+            },
+            compareAtPrice: 15 // Adjust compare price
           }
         ] 
       }

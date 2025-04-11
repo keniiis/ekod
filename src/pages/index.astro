@@ -22,14 +22,13 @@ const pageDescription = "Descubre productos útiles, originales y prácticos par
   <div class="relative bg-gray-100"> 
     <div class="absolute inset-0 overflow-hidden">
       <Image
-        src="/assets/banner.webp" {/*Use direct public path*/}
+        src="/assets/banner.webp" 
         alt="Banner promocional de EKOD Store" 
         class="w-full h-full object-cover" 
-        loading="eager" {/* Keep eager loading for hero image */}
-        width={1920} {/* Required for images in public/ */}
-        height={1080} {/* Required for images in public/ */}
-        format="webp" {/* Optional: Suggest a format, though Astro might not convert public images */}
-      />
+        loading="eager" 
+        width={1920} 
+        height={1080}
+        format="webp"/>
     </div>
     {/* Restore original centering and padding/max-width */}
     <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-32 text-center"> 

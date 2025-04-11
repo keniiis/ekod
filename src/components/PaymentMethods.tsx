@@ -1,4 +1,5 @@
-import { initMercadoPago, Wallet } from '@mercadopago/sdk-react';
+// Removed MercadoPago SDK imports as it seems to cause conflicts
+// import { initMercadoPago, Wallet } from '@mercadopago/sdk-react';
 import { PayPalButtons, PayPalScriptProvider } from '@paypal/react-paypal-js';
 import type { OnApproveData } from '@paypal/paypal-js';
 
@@ -7,22 +8,22 @@ interface PaymentMethodsProps {
   onSuccess: (paymentId: string) => void;
 }
 
+// Removed MercadoPago SDK initialization from here
+
 export default function PaymentMethods({ amount, onSuccess }: PaymentMethodsProps) {
-  // Inicializar MercadoPago con tu clave pública
-  initMercadoPago('TU_CLAVE_PUBLICA_MP', {
-    locale: 'es-AR'
-  });
+
+  // Removed check for MERCADO_PAGO_PUBLIC_KEY as we are not using MP components here anymore
 
   return (
     <div className="space-y-6">
       <div className="border-b border-gray-100 pb-4">
         <h3 className="text-sm font-medium mb-3">MÉTODOS DE PAGO</h3>
-        
+
         <div className="space-y-4">
-          {/* MercadoPago Wallet */}
-          <div>
-            <Wallet 
-              initialization={{ preferenceId: 'generar-en-backend' }} // Debes generar un preferenceId en tu backend
+          {/* MercadoPago Wallet Removed */}
+          {/* <div>
+            <Wallet
+              initialization={{ preferenceId: 'generar-en-backend' }}
               customization={{
                 visual: {
                   buttonBackground: 'black',
@@ -30,7 +31,9 @@ export default function PaymentMethods({ amount, onSuccess }: PaymentMethodsProp
                 }
               }}
             />
-          </div>
+          </div> */}
+          <p className="text-sm text-gray-500">(Mercado Pago no disponible temporalmente en este componente)</p>
+
 
           {/* PayPal */}
           <div className="pt-2">

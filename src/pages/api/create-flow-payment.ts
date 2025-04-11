@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
-// Remove axios import
 import crypto from 'crypto'; // Needed for HMAC signature
+import { saveOrderData } from '../../utils/tempOrderStore'; // Importar utilidad de almacenamiento temporal
+import { randomUUID } from 'node:crypto'; // Para generar IDs únicos
 
 // IMPORTANT: Flow credentials should be set as environment variables
 const FLOW_API_KEY = import.meta.env.FLOW_API_KEY;
@@ -43,31 +44,64 @@ export const POST: APIRoute = async ({ request, url }) => {
 
   try {
     const body = await request.json();
-    // Expect total amount and email from frontend
-    const { amount, email } = body; 
-    const orderId = `AstroShop-${Date.now()}`; // Generate a simple unique order ID
-    const subject = `Pago Orden ${orderId}`;
+    console.log("Recibido en backend (Flow):", body);
 
-    // Basic validation (add email check)
-    if (!amount || typeof amount !== 'number' || amount <= 0 || !email || typeof email !== 'string') {
-       return new Response(JSON.stringify({ error: 'Invalid request body: Missing or invalid amount or email.' }), { 
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
-      });
+    // 1. Extraer amount Y datos del cliente del body
+    //    Asegúrate de que tu frontend envíe estos campos en el body JSON
+    const { amount } = body; // Amount sigue siendo necesario para Flow
+    const customerData = {
+        firstName: body.firstName || body.nombre,
+        lastName: body.lastName || body.apellido,
+        phone: body.phone || body.telefono,
+        email: body.email, // Email es crucial
+        address: body.address || body.direccion,
+        region: body.region,
+        commune: body.commune || body.comuna,
+        observations: body.observations || body.observacion || ''
+    };
+    console.log("Datos del cliente extraídos (Flow):", customerData);
+
+    // 2. Validar amount y datos básicos del cliente
+    if (!amount || typeof amount !== 'number' || amount <= 0) {
+        return new Response(JSON.stringify({ error: 'Missing or invalid amount' }), {
+            status: 400, headers: { 'Content-Type': 'application/json' },
+        });
+    }
+    if (!customerData.email || !customerData.firstName || !customerData.lastName || !customerData.phone || !customerData.address || !customerData.region || !customerData.commune) {
+        return new Response(JSON.stringify({ error: 'Missing required customer data fields' }), {
+            status: 400, headers: { 'Content-Type': 'application/json' },
+        });
     }
 
-    // --- Prepare data for Flow API ---
+    // 3. Generar un ID de orden único
+    const orderId = randomUUID(); // Usar UUID para mayor unicidad
+    const subject = `Pago Orden ${orderId}`;
+    console.log(`Generated unique orderId (Flow): ${orderId}`);
+
+    // 4. Guardar datos del cliente temporalmente
+    try {
+        await saveOrderData(orderId, customerData);
+    } catch (saveError: any) {
+        console.error(`Error saving temporary order data for ${orderId} (Flow):`, saveError);
+        return new Response(JSON.stringify({ error: 'Failed to save order data before creating Flow payment', details: saveError.message }), {
+            status: 500, headers: { 'Content-Type': 'application/json' },
+        });
+    }
+
+    // 5. Preparar datos para la API de Flow
     const params: Record<string, any> = {
       apiKey: FLOW_API_KEY,
-      commerceOrder: orderId.toString(), // Unique order ID from your system
+      commerceOrder: orderId, // <-- USAR EL orderId GENERADO
       subject: subject,
-      currency: 'CLP', // Assuming CLP
-      amount: Math.round(amount), // Ensure amount is integer for CLP
-      email: email, // Use the email received from the frontend
-      paymentMethod: 9, // 9 typically means "all available methods" on Flow, check docs
-      urlConfirmation: `${url.origin}/api/flow-confirmation`, // Your endpoint to receive confirmation from Flow
-      urlReturn: `${url.origin}/orden-confirmada-flow`, // Where user returns after payment
-      // Add optional parameters if needed (e.g., optional)
+      currency: 'CLP',
+      amount: Math.round(amount),
+      email: customerData.email, // Usar el email de customerData
+      paymentMethod: 9,
+      // !! IMPORTANTE: Cambiar urlConfirmation para apuntar al webhook unificado !!
+      urlConfirmation: `${url.origin}/api/payment-webhook`,
+      urlReturn: `${url.origin}/orden-confirmada`, // Usar la misma página de retorno que MP
+      // Considera añadir 'optional' si necesitas pasar datos extra que Flow devuelva
+      // optional: JSON.stringify({ source: 'flow', orderId: orderId }) // Ejemplo
     };
 
     // Generate the signature

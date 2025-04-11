@@ -1,27 +1,39 @@
-import React, { useMemo, useEffect, useState, useRef } from 'react'; // Import hooks
+import React, { useMemo, useEffect, useState } from 'react'; // Corrected import, removed useRef
 import type { FormEvent } from 'react'; // Import FormEvent as a type
+// Removed MercadoPago React SDK import as we are using manual redirection
 import { useCartStore } from '../store/cart';
 import { formatPriceCLP } from '../utils/formatting'; // Import the formatter
 
-// Declare MercadoPago type globally to avoid TypeScript errors for the 'MercadoPago' object
-// In a real app, you might install @mercadopago/sdk-react types if available
+// Declare MercadoPago type globally (still potentially needed if using window.MercadoPago directly, though unlikely now)
+// In a real app, you might install @dooavogdsTypkScript-trrorstporethea'e'objct
+// In a al appyo mighnst@meadag/sdk-ract ype if available
 declare global {
   interface Window {
-    MercadoPago: any; 
+    MercadoPago: any;
   }
 }
 
-const MERCADO_PAGO_PUBLIC_KEY = "APP_USR-d14588a9-c659-47aa-97b0-eeaeb43d7fc8"; // Use the key you provided
+// Load Public Key from environment variable (must be prefixed with PUBLIC_ for client-side access in Astro)
+const MERCADO_PAGO_PUBLIC_KEY = import.meta.env.PUBLIC_MERCADO_PAGO_PUBLIC_KEY;
+
+if (!MERCADO_PAGO_PUBLIC_KEY) {
+  console.error("Error: PUBLIC_MERCADO_PAGO_PUBLIC_KEY environment variable is not set in .env");
+  // Handle the error appropriately, maybe return null or an error message component
+}
+// Removed initMercadoPago call as we are not using the React SDK components
+
 
 const CheckoutForm: React.FC = () => {
   const items = useCartStore((state) => state.items);
-  const clearCart = useCartStore((state) => state.clearCart); 
+  const clearCart = useCartStore((state) => state.clearCart);
   const [isLoading, setIsLoading] = useState(false); // State for loading preference
-  const [preferenceId, setPreferenceId] = useState<string | null>(null); // State for preference ID
-  const mpBrickContainerRef = useRef<HTMLDivElement>(null); // Ref for the brick container
-  const mpInstanceRef = useRef<any>(null); // Ref to store MercadoPago instance
-  const [isStoreHydrated, setIsStoreHydrated] = useState(false); // Track Zustand hydration
-  const [isFlowLoading, setIsFlowLoading] = useState(false); // State for Flow loading
+  const [preferenceId, setPreferenceId] = useState<string | null>(null);
+  const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null); // State for checkout URL remains
+  // Removed mpBrickContainerRef, mpInstanceRef, mpBrickInstanceRef
+  const [isStoreHydrated, setIsStoreHydrated] = useState(false);
+  const [isFlowLoading, setIsFlowLoading] = useState(false);
+  const [isFormValid, setIsFormValid] = useState(false);
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({}); // Estado para errores
 
   // --- State for Customer Details ---
   const [customerEmail, setCustomerEmail] = useState('');
@@ -29,30 +41,52 @@ const CheckoutForm: React.FC = () => {
   const [lastName, setLastName] = useState('');
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
-  const [region, setRegion] = useState(''); // Consider using a <select> for regions/communes later
+  const [region, setRegion] = useState('');
   const [commune, setCommune] = useState('');
   const [observations, setObservations] = useState('');
   // ---------------------------------
+
+  // --- Datos de Regiones/Comunas (EJEMPLO - REEMPLAZAR CON DATOS REALES) ---
+  const regionCommuneData: { [key: string]: string[] } = useMemo(() => ({
+    "": [], // Opción inicial vacía
+    "Antofagasta": ["Antofagasta", "Baquedano", "Calama", "La Negra", "María Elena", "Mejillones", "Ollague", "San Pedro de Atacama", "Sierra Gorda", "Taltal", "Tocopilla"],
+    "Araucanía": ["Angol", "Carahue", "Chol Chol", "Collipuylli", "Cunco", "Curacautin", "Curarrehue", "Ercilla", "Freire", "Galvarino", "Gorbea", "Lautaro", "Loncoche", "Lonquimay", "Los Sauces", "Lumaco", "Melipeuco", "Nueva Imperial", "Padre las casas", "Perquenco", "Pitrufquen", "Pucón", "Puren", "Renaico", "Saavedra", "Temuco", "Teodoro Schmidt", "Toltén", "Traiguen", "Victoria", "Vilcun", "Villarrica"],
+    "Arica y Parinacota": ["Arica", "Camarones", "General Lagos", "Putre"],
+    "Atacama": ["Alto del Carmen", "Caldera", "Chañaral", "Copiapó", "Diego de Almagro", "El Salvador", "Freirina", "Huasco", "Tierra Amarilla", "Vallenar"],
+    "Aysén": ["Aysén", "Chile Chico", "Cisnes", "Cochrane", "Coyhaique", "Guaitecas", "Lago Verde", "O'Higgins", "Río Ibáñez", "Tortel"],
+    "Biobío": ["Alto Biobío", "Antuco", "Arauco", "Cabrero", "Cañete", "Chiguayante", "Concepción", "Contulmo", "Coronel", "Curanilahue", "Florida", "Hualpén", "Hualqui", "Laja", "Lebu", "Los Álamos", "Los Ángeles", "Lota", "Penco", "Quilaco", "Quilleco", "San Pedro de la Paz", "San Rosendo", "Santa Bárbara", "Santa Juana", "Talcahuano", "Tirúa", "Tomé", "Tucapel", "Yumbel"],
+    "Coquimbo": ["Andacollo", "Canela", "Combarbalá", "Coquimbo", "Illapel", "La Higuera", "La Serena", "Los Vilos", "Monte Patria", "Ovalle", "Paiguano", "Punitaqui", "Río Hurtado", "Salamanca", "Vicuña"],
+    "Libertador General Bernardo O'Higgins": ["Chepica", "Chimbarongo", "Codegua", "Coinco", "Coltauco", "Donihue", "Graneros", "La Estrella", "Las Cabras", "Las Nieves - Rancagu", "Litueche", "Lolol", "Machali", "Malloas", "Marchihue", "Mostazal", "Nancagua", "Navidad", "Olivar - Alto", "Olivar - Bajo", "Palmilla", "Paredones", "Peralillo", "Peumo", "Pichidegua", "Pichilemu", "Placilla", "Pumanque", "Quinta de Tilcoco", "Rancagua", "Rengo", "Requinoa","San Fernando","Santa Cruz","San Vicente"],
+    "Los Lagos": ["Ancud", "Calbuco", "Castro", "Chaiten", "Chonchi", "Cochamo", "Curaco de Velez", "Dalcahue", "Fresia", "Frutillar", "Futaleufu", "Hualaihue", "Llanquihue", "Los Muermos", "Maullin", "Osorno", "Palena", "Puerto Montt", "Puerto Octay", "Puerto Varas", "Puqueldon", "Purranque", "Puyehue", "Queilen", "Quellon", "Quemchi", "Quinchao", "Rio Negro", "San Juan de la Costa", "San Pablo"],
+    "Los Ríos": ["Corral", "Futrono", "Lago Ranco", "Lanco", "La Union", "Los Lagos", "Mafil", "Mariquina", "Paillaco", "Panguipulli", "Rio Bueno", "Valdivia"],
+    "Magallanes y la Antártica Chilena": ["Antártica", "Cabo de Hornos", "Laguna Blanca", "Natales", "Porvenir", "Primavera", "Punta Arenas", "Río Verde", "San Gregorio", "Timaukel", "Torres del Paine"],
+    "Maule": ["Cauquenes","Chanco","Colbun","Constitucion","Curepto","Curico","Empedrado","Hualane","Licanten","Linares","Longavi","Maule","Molina","Parral","Pelarco","Pelluhue","Pencahue","Rauco","Retiro","Rio Claro","Romeral","Sagrada Familia","San Clemente","San Javier","San Rafael","Talca","Teno","Vichuquen","Villa Alegre","Yerbas Buenas"],
+    "Metropolitana": ["Alhue", "Buin", "Calera de Tango", "Cerrillos", "Cerro Navia", "Colina", "Conchali", "Curacavi", "El Bosque", "El Monte", "Estacion Central", "Huechuraba", "Independencia", "Isla de Maipo", "La Cisterna", "La Florida", "La Granja", "Lampa", "La Pintana", "La Reina", "Las Condes", "Lo Barnechea", "Lo Espejo", "Lo Prado", "Macul", "Maipu", "Maria Pinto", "Melipilla", "Nunoa", "Padre Hurtado", "Paine", "Pedro Aguirre Cerda", "Penaflor", "Penalolen", "Pirque", "Providencia", "Pudahuel", "Puente Alto", "Quilicura", "Quinta Normal", "Recoleta", "Renca", "San Bernardo", "San Joaquin","San Jose de Maipo","San Miguel","San Pedro","San Ramon","Santiago","Talagante","Tiltil","Vitacura"],
+    "Ñuble": ["Bulnes", "Chillan", "Chillan Viejo", "Cobquecura", "Coelemu", "Coihueco", "El Carmen", "Ninhue", "Niquen", "Pemuco", "Pinto", "Portezuelo", "Quillon", "Quirihue", "Ranquil", "San Carlos", "San Fabian", "San Ignacio", "San Nicolas", "Trehuaco", "Yungay"],
+    "Tarapacá": ["Alto Hospicio", "Camina", "Colchane", "Huara", "Iquique", "Pica", "Pozo Almonte", "Tarapaca"],
+    "Valparaíso": ["Algarrobo", "Cabildo", "Calera", "Calle Larga", "Cartagena", "Casablanca", "Catemu", "Concon", "El Melon", "El Quisco", "El Tabo", "Hijuelas", "Isla de Pascua", "Juan Fernandez", "La Cruz", "La Ligua", "Limache", "Llaillay", "Los Andes", "Nogales", "Olmue", "Panquehue", "Papudo", "Petorca", "Placilla - V Del Mar", "Puchuncavi", "Putendo", "Quillota", "Quilpue", "Quintero", "Rinconada", "San Antonio", "San Esteban", "San Felipe", "Santa Maria", "Santo Domingo", "Valparaiso", "Villa Alemana"],
+  }), []);
+
+  const availableRegions = useMemo(() => Object.keys(regionCommuneData).sort((a, b) => a.localeCompare(b)), [regionCommuneData]);
+  const availableCommunes = useMemo(() => (regionCommuneData[region] || []).sort((a, b) => a.localeCompare(b)), [region, regionCommuneData]);
+  // ---------------------------------------------------------------------
 
   const subtotal = useMemo(() => {
     return items.reduce((acc, item) => acc + item.price * item.quantity, 0);
   }, [items]);
 
-  // Simple shipping calculation (same as cart)
-  const shipping = subtotal > 0 ? 5.00 : 0; 
-  const total = subtotal + shipping;
+  // --- Force Free Shipping for Production Test ---
+  // const shipping = subtotal > 0 ? 5.00 : 0; // Original calculation
+  const shipping = 0; // Force free shipping
+  const total = subtotal + shipping; // Total will now just be subtotal
 
   // Effect to check Zustand hydration status
   useEffect(() => {
-    // Zustand's persist middleware has a `hasHydrated` function
-    // and an `onFinishHydration` listener. We use onFinishHydration
-    // to ensure we act only after hydration is complete.
     const unsubFinishHydration = useCartStore.persist.onFinishHydration(() => {
       console.log('Zustand store hydration finished.');
       setIsStoreHydrated(true);
     });
 
-    // Check initial hydration status in case it finished before listener attached
     if (useCartStore.persist.hasHydrated()) {
        console.log('Zustand store already hydrated on mount.');
        setIsStoreHydrated(true);
@@ -61,248 +95,156 @@ const CheckoutForm: React.FC = () => {
     }
 
     return () => {
-      unsubFinishHydration(); // Clean up listener on unmount
+      unsubFinishHydration();
     };
   }, []);
 
+  // --- Validation Function ---
+  const checkFormValidity = (): boolean => {
+    return !!(
+      firstName.trim() &&
+      lastName.trim() &&
+      customerEmail.trim() && /\S+@\S+\.\S+/.test(customerEmail) &&
+      phone.trim() && phone.length >= 8 &&
+      address.trim() &&
+      region &&
+      commune
+    );
+  };
 
-  // Effect to load MP SDK and create Brick *after* hydration and SDK load
+  // Effect to update the isFormValid state whenever relevant fields change
   useEffect(() => {
-    // Only proceed if the store is hydrated
-    if (!isStoreHydrated) {
-      console.log('MP SDK Load: Waiting for store hydration...');
-      return; 
+    const isValid = checkFormValidity();
+    setIsFormValid(isValid);
+  }, [firstName, lastName, customerEmail, phone, address, region, commune]);
+
+  // Effect to potentially reset preference if form becomes invalid
+  // We removed the automatic fetching from here. Fetching is now triggered by button click.
+  useEffect(() => {
+    // Reset preference if form becomes invalid
+    if (!isFormValid && (preferenceId || checkoutUrl)) { // Reset if form invalid AND we have old data
+        console.log("Form became invalid, resetting preference state.");
+        setPreferenceId(null);
+        setCheckoutUrl(null);
     }
-    console.log('MP SDK Load: Store is hydrated.');
+    // We only need isFormValid, preferenceId, and checkoutUrl as dependencies here now.
+  }, [isFormValid, preferenceId, checkoutUrl]);
 
-    const scriptId = 'mercado-pago-sdk';
-    let scriptLoaded = document.getElementById(scriptId) !== null;
-
-    const initializeAndCreateBrick = () => {
-       console.log('Attempting to initialize MP SDK and create brick...');
-       try {
-          if (window.MercadoPago) {
-             if (!mpInstanceRef.current) { // Initialize only once
-                mpInstanceRef.current = new window.MercadoPago(MERCADO_PAGO_PUBLIC_KEY, {
-                   locale: 'es-CL',
-                });
-                console.log('Mercado Pago SDK instanciado.');
-             }
-             // --- Trigger brick creation ---
-             // Check if items exist *after* hydration before creating preference
-             if (items.length > 0) {
-                 console.log('Hydrated store has items, proceeding to create brick.');
-                 createCheckoutBrick(); 
-             } else {
-                 console.log('Hydrated store is empty, skipping brick creation.');
-                 // Optionally hide the brick container or show an empty message here
-                 if (mpBrickContainerRef.current) mpBrickContainerRef.current.innerHTML = ''; 
-             }
-             // -----------------------------
-          } else {
-             console.error('window.MercadoPago no está disponible.');
-          }
-       } catch (sdkError) {
-          console.error('Error al instanciar Mercado Pago o crear brick:', sdkError);
-       }
-    };
-
-    // If script already exists in DOM, try initializing directly
-    if (scriptLoaded) {
-       console.log('MP SDK script already in DOM.');
-       initializeAndCreateBrick();
-       return; // Don't add script again
+  // Handler function for the Mercado Pago button click - Renamed
+  const fetchPreferenceAndRedirect = async () => {
+    // 1. Validate form first
+    if (!validateFormOnSubmit()) {
+        console.log("Formulario inválido para Mercado Pago.");
+        // Optionally set a general error message if desired
+        // setFormErrors(prev => ({ ...prev, general: 'Por favor completa los campos requeridos.' }));
+        return; // Stop if validation fails
     }
 
-    // If script doesn't exist, create and load it
-    console.log('MP SDK script not found, creating and appending...');
-    const script = document.createElement('script');
-    script.id = scriptId;
-    script.src = 'https://sdk.mercadopago.com/js/v2';
-    script.async = true;
-    script.onload = initializeAndCreateBrick; // Call combined function on load
-    script.onerror = () => {
-      console.error('Error al cargar dinámicamente el script del SDK de Mercado Pago.');
-    };
-    document.body.appendChild(script);
+    // 2. Proceed to fetch preference if form is valid
+    console.log('Form valid, fetching preference ID and URL for MP...');
+    setIsLoading(true); // Indicate loading specifically for MP
+    setFormErrors({});
+    setPreferenceId(null); // Reset previous IDs just in case
+    setCheckoutUrl(null);
 
-  // Rerun this effect if hydration status changes
-  }, [isStoreHydrated]); 
-
-
-  // Function to create preference and render the Checkout Brick (now assumes SDK instance exists)
-  const createCheckoutBrick = async () => {
-    // Added check for items length here as well for safety, although useEffect should prevent call if empty
-    if (!mpInstanceRef.current || !mpBrickContainerRef.current || items.length === 0) {
-        console.log('createCheckoutBrick called but conditions not met (SDK instance, container, or items missing).');
-        return; 
-    }
-    
-    // Avoid re-creating if preferenceId already exists from a previous attempt in this session
-    if (preferenceId) {
-        console.log('Preference ID already exists, attempting to render brick without fetching new one.');
-        // Potentially just try rendering the brick again if needed, or assume it's there
-        // For simplicity, we'll just log and return for now if preferenceId exists.
-        // You might want logic here to re-render the brick if the container was cleared.
-        return; 
-    }
-
-    console.log('Proceeding to fetch preference ID...');
-    setIsLoading(true);
-    // setPreferenceId(null); // Resetting here might cause issues if called multiple times, reset earlier
-    
-    // Clear previous brick if exists
-    mpBrickContainerRef.current.innerHTML = ''; 
-
+    // 3. Fetch logic
     try {
-      // **IMPORTANT: Replace with actual fetch to your backend endpoint**
-      // This endpoint needs to be created separately. It should receive cart items 
-      // and return a { preferenceId: '...' } object.
-      const response = await fetch('/api/create-preference', { // Placeholder URL
+      // --- Explicitly create plain data object for the body ---
+      const payload = {
+        firstName: firstName,
+        lastName: lastName,
+        phone: phone,
+        email: customerEmail,
+        address: address,
+        region: region,
+        commune: commune,
+        observations: observations,
+        items: items.map(item => ({ // Ensure items are plain objects
+          id: item.id,
+          title: item.name, // Assuming 'name' is correct based on previous code
+          quantity: item.quantity,
+          unit_price: item.price
+        })),
+        shippingCost: shipping
+      };
+      console.log("Payload being sent to backend:", payload); // Log the plain object
+
+      const response = await fetch('/api/create-preference', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          items: items.map(item => ({ // Send item details needed by backend
-            id: item.id,
-            title: item.name,
-            quantity: item.quantity,
-            unit_price: item.price
-          })) 
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload), // Stringify the plain object
       });
 
       if (!response.ok) {
-        throw new Error(`Failed to create preference: ${response.statusText}`);
+        let errorBody = await response.text();
+        try { errorBody = JSON.parse(errorBody).error || errorBody; } catch(e){}
+        console.error(`Backend error (${response.status}): ${errorBody}`);
+        throw new Error(`Error del servidor: ${errorBody}`);
       }
 
       const data = await response.json();
-      const fetchedPreferenceId = data.preferenceId;
-
-      if (!fetchedPreferenceId) {
-         throw new Error('Preference ID not received from backend');
+      if (!data.preferenceId || !data.checkoutUrl) {
+         throw new Error('Preference ID or Checkout URL not received from backend');
       }
-      
-      setPreferenceId(fetchedPreferenceId); // Store the preference ID
 
-      // Render the Checkout Brick
-      const bricksBuilder = mpInstanceRef.current.bricks();
-      await bricksBuilder.create('wallet', mpBrickContainerRef.current.id, {
-        initialization: {
-           preferenceId: fetchedPreferenceId,
-         },
-         // Apply user-provided customization
-         customization: {
-            theme:'dark', // Use dark theme
-            visual: { // Visual styles are nested under 'visual' according to MP docs
-                valuePropColor: 'black', // Note: This might conflict with dark theme, test needed
-                borderRadius: '10px',
-                verticalPadding: '10px',
-                horizontalPadding: '10px',
-            },
-            texts: {
-                valueProp: 'practicality', // Change value prop text
-            },
-         },
-         callbacks: {
-          onReady: () => {
-            console.log('Mercado Pago Brick ready');
-            setIsLoading(false); 
-          },
-          onSubmit: (callbackData: any) => { // Receive the raw data without destructuring initially
-            console.log('Mercado Pago onSubmit callback received:', callbackData); // Log what MP actually sends
+      console.log(`Preference fetched successfully. Preference ID: ${data.preferenceId}, Checkout URL: ${data.checkoutUrl}`);
 
-            // Check if data exists before trying to use it
-            if (callbackData) {
-               // Now you can safely attempt to access properties if they exist
-               const { selectedPaymentMethod, formData } = callbackData; 
-               console.log('Mercado Pago onSubmit details:', { selectedPaymentMethod, formData });
-               // You might send formData to your backend here for final processing/verification
-            } else {
-               console.log('Mercado Pago onSubmit called without data (might be expected for Wallet Button redirection).');
-            }
-            
-            // Depending on the integration type, payment might be finalized here or after redirection
-            // For Wallet Button, redirection usually happens automatically.
-            // For other Bricks (CardForm), you'd POST formData to your backend.
-            return new Promise<void>((resolve) => {
-              // Example: Simulate backend processing before resolving
-              setTimeout(() => {
-                 console.log("Processing payment submission...");
-                 // Potentially clear cart and redirect based on backend response
-                 // clearCart(); 
-                 // window.location.href = '/orden-confirmada'; 
-                 resolve(); 
-              }, 1000); 
-            });
-          },
-          onError: (error: any) => {
-            console.error('Mercado Pago Brick error:', error);
-            setIsLoading(false);
-            alert('Error al procesar el pago con Mercado Pago.');
-            setPreferenceId(null); // Allow retry
-          },
-        },
-      });
+      // 4. Redirect immediately if successful
+      console.log(`Redirecting to Mercado Pago URL: ${data.checkoutUrl}`);
+      window.location.href = data.checkoutUrl;
+      // No need to set preferenceId/checkoutUrl state if redirecting immediately
 
     } catch (error) {
-      console.error('Error creating Mercado Pago preference or brick:', error);
-      alert('No se pudo iniciar el pago con Mercado Pago. Intenta de nuevo.');
-      setIsLoading(false);
-      setPreferenceId(null); // Allow retry
+      console.error('Error fetching Mercado Pago preference or redirecting:', error);
+      setFormErrors({ general: `No se pudo iniciar el pago con Mercado Pago: ${error instanceof Error ? error.message : 'Error desconocido'}` });
+      // Clear any potentially stale IDs/URLs
+      setPreferenceId(null);
+      setCheckoutUrl(null);
+    } finally {
+       setIsLoading(false); // Stop loading indicator
     }
   };
 
-  // Remove the handleMercadoPago function as createCheckoutBrick is called automatically
+  // --- Validation Function for Submit ---
+  // Sets errors in state and returns true if valid
+  const validateFormOnSubmit = (): boolean => {
+    const errors: Record<string, string> = {};
+    if (!firstName.trim()) errors.firstName = 'Nombre es requerido.';
+    if (!lastName.trim()) errors.lastName = 'Apellido es requerido.';
+    if (!customerEmail.trim()) errors.customerEmail = 'Email es requerido.';
+    else if (!/\S+@\S+\.\S+/.test(customerEmail)) errors.customerEmail = 'Formato de email inválido.';
+    if (!phone.trim()) errors.phone = 'Teléfono es requerido.';
+    else if (phone.length < 8) errors.phone = 'Teléfono debe tener al menos 8 dígitos.';
+    if (!address.trim()) errors.address = 'Dirección es requerida.';
+    if (!region) errors.region = 'Región es requerida.';
+    if (!commune) errors.commune = 'Comuna es requerida.';
+
+    setFormErrors(errors); // Set errors to display them
+    return Object.keys(errors).length === 0; // Return true if no errors
+  };
 
   // Handler for Flow/Webpay button click
   const handleFlowPaymentClick = async (event: FormEvent) => {
-    event.preventDefault(); // Prevent default form submission if wrapped in <form> later
-
-    // --- Basic Validation for all required fields ---
-    if (!customerEmail || !/\S+@\S+\.\S+/.test(customerEmail)) {
-      alert('Por favor, ingresa un correo electrónico válido.');
-      return;
+    event.preventDefault();
+    if (!validateFormOnSubmit()) { // Validate form and display errors
+        console.log("Formulario inválido para Flow.");
+        return; // Stop if validation fails
     }
-    if (!firstName) { alert('Por favor, ingresa tu nombre.'); return; }
-    if (!lastName) { alert('Por favor, ingresa tu apellido.'); return; }
-    if (!phone) { alert('Por favor, ingresa tu teléfono.'); return; } // Add more specific validation later if needed
-    if (!address) { alert('Por favor, ingresa tu dirección.'); return; }
-    if (!region) { alert('Por favor, ingresa tu región.'); return; }
-    if (!commune) { alert('Por favor, ingresa tu comuna.'); return; }
-    // Observations are optional
-    // -------------------------------------------------
 
-    // --- Log all collected data (for now) ---
-    const customerData = {
-        email: customerEmail,
-        firstName,
-        lastName,
-        phone,
-        address,
-        region,
-        commune,
-        observations,
-        amount: total // Include total amount
+    // If validation passes, proceed
+    const customerDataForFlow = {
+        email: customerEmail, firstName, lastName, phone, address, region, commune, observations, amount: total
     };
-    console.log('Customer Data Collected:', customerData);
-    // -----------------------------------------
+    console.log('Customer Data Collected for Flow:', customerDataForFlow);
 
-    console.log('Initiating Flow payment for email:', customerEmail);
+    console.log('Initiating Flow payment...');
     setIsFlowLoading(true);
+    setFormErrors({}); // Clear previous errors before API call
     try {
-      // **IMPORTANT:** We are still only sending email and amount here.
-      // The backend needs modification to handle the full customerData,
-      // and ideally, we'd only send necessary info to start payment,
-      // storing the rest securely until webhook confirmation.
       const response = await fetch('/api/create-flow-payment', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        // Send the total amount and customer email
-        body: JSON.stringify({ amount: total, email: customerEmail }), 
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(customerDataForFlow),
       });
 
       if (!response.ok) {
@@ -313,7 +255,6 @@ const CheckoutForm: React.FC = () => {
       const data = await response.json();
       if (data.redirectUrl) {
         console.log('Received Flow redirect URL:', data.redirectUrl);
-        // Redirect the user to Flow's payment page
         window.location.href = data.redirectUrl;
       } else {
         throw new Error('Redirect URL not received from Flow backend.');
@@ -321,222 +262,246 @@ const CheckoutForm: React.FC = () => {
 
     } catch (error: any) {
       console.error('Error initiating Flow payment:', error);
-      alert(`Error al iniciar el pago con Flow/Webpay: ${error.message}`);
+      setFormErrors({ general: `Error al iniciar el pago: ${error.message}` }); // Show general error
       setIsFlowLoading(false);
-    } 
-    // No need to set loading to false on success, as we redirect
+    }
   };
 
-  // Remove the handlePayPal function as the button is being removed
 
-  if (items.length === 0) {
+  if (!isStoreHydrated || items.length === 0) {
     return (
-      <div className="text-center text-gray-500 py-12"> {/* Changed class to className */}
-        <p>Tu carrito está vacío. No puedes proceder al checkout.</p>
-        <a href="/tienda" className="mt-4 inline-block text-sm underline">Volver a la tienda</a> {/* Changed class to className */}
+      <div className="text-center text-gray-500 py-12">
+        <p>{!isStoreHydrated ? 'Cargando carrito...' : 'Tu carrito está vacío. No puedes proceder al checkout.'}</p>
+        {isStoreHydrated && items.length === 0 && (
+            <a href="/tienda" className="mt-4 inline-block text-sm underline">Volver a la tienda</a>
+        )}
       </div>
     );
   }
 
   return (
-    <div className="bg-gray-50 p-8 rounded-lg shadow-sm">
-      <h2 className="text-xl font-medium mb-6">Información de Envío y Contacto</h2>
+    // Añadir max-w-[100rem] y mx-auto al contenedor principal
+    <div className="bg-gray-50 p-8 rounded-lg shadow-sm mx-auto">
+      {/* Contenedor principal Flex para dos columnas en pantallas medianas y superiores */}
+      <div className="md:flex md:gap-8 lg:gap-12">
 
-      {/* --- Customer Details Form Fields --- */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 mb-6">
-        {/* First Name */}
-        <div>
-          <label htmlFor="first-name" className="block text-sm font-medium text-gray-700 mb-1">Nombre(s)</label>
-          <input
-            type="text"
-            id="first-name"
-            value={firstName}
-            onChange={(e) => setFirstName(e.target.value)}
-            required
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-          />
-        </div>
+        {/* Columna Izquierda: Formulario */}
+        <div className="md:w-3/5 lg:w-2/3 mb-8 md:mb-0"> {/* Añadir margen inferior en móvil */}
+          <h2 className="text-xl font-medium mb-8">Información de Envío y Contacto</h2> {/* Increased margin bottom */}
+          {/* --- Customer Details Form Fields --- */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4"> {/* Quitar mb-6 de aquí */}
+            {/* First Name */}
+            <div>
+              <label htmlFor="first-name" className="block text-sm font-medium text-gray-700 mb-1">Nombre(s)</label>
+              <input
+                type="text" id="first-name" value={firstName}
+                // Clear specific error on change
+                onChange={(e) => { setFirstName(e.target.value); setFormErrors(prev => ({ ...prev, firstName: '' })); }}
+                required
+                // Apply red border if error exists for this field
+                className={`w-full px-3 py-2 border ${formErrors.firstName ? 'border-red-500' : 'border-gray-300'} rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm`}
+              />
+              {/* Show error message if exists */}
+              {formErrors.firstName && <span className="text-xs text-red-600 mt-1">{formErrors.firstName}</span>}
+            </div>
 
-        {/* Last Name */}
-        <div>
-          <label htmlFor="last-name" className="block text-sm font-medium text-gray-700 mb-1">Apellido(s)</label>
-          <input
-            type="text"
-            id="last-name"
-            value={lastName}
-            onChange={(e) => setLastName(e.target.value)}
-            required
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-          />
-        </div>
+            {/* Last Name */}
+            <div>
+              <label htmlFor="last-name" className="block text-sm font-medium text-gray-700 mb-1">Apellido(s)</label>
+              <input
+                type="text" id="last-name" value={lastName}
+                onChange={(e) => { setLastName(e.target.value); setFormErrors(prev => ({ ...prev, lastName: '' })); }}
+                required
+                className={`w-full px-3 py-2 border ${formErrors.lastName ? 'border-red-500' : 'border-gray-300'} rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm`}
+              />
+              {formErrors.lastName && <span className="text-xs text-red-600 mt-1">{formErrors.lastName}</span>}
+            </div>
 
-        {/* Email */}
-        <div>
-          <label htmlFor="customer-email" className="block text-sm font-medium text-gray-700 mb-1">Correo Electrónico</label>
-          <input
-            type="email"
-            id="customer-email"
-            value={customerEmail}
-            onChange={(e) => setCustomerEmail(e.target.value)}
-            placeholder="tu@correo.com"
-            required
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-          />
-        </div>
+            {/* Email */}
+            <div>
+              <label htmlFor="customer-email" className="block text-sm font-medium text-gray-700 mb-1">Correo Electrónico</label>
+              <input
+                type="email" id="customer-email" value={customerEmail}
+                onChange={(e) => { setCustomerEmail(e.target.value); setFormErrors(prev => ({ ...prev, customerEmail: '' })); }}
+                placeholder="tu@correo.com" required
+                className={`w-full px-3 py-2 border ${formErrors.customerEmail ? 'border-red-500' : 'border-gray-300'} rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm`}
+              />
+              {formErrors.customerEmail && <span className="text-xs text-red-600 mt-1">{formErrors.customerEmail}</span>}
+            </div>
 
-        {/* Phone */}
-        <div>
-          <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">Teléfono</label>
-          <div className="relative rounded-md shadow-sm">
-             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-               <span className="text-gray-500 sm:text-sm">+56</span>
-             </div>
-             <input
-               type="tel"
-               id="phone"
-               value={phone}
-               onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))} // Allow only digits
-               placeholder="9xxxxxxxx"
-               required
-               className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" // Added pl-10 for prefix
-             />
+            {/* Phone */}
+            <div>
+              <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">Teléfono</label>
+              <div className="relative rounded-md shadow-sm">
+                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                   <span className="text-gray-500 sm:text-sm">+56</span>
+                 </div>
+                 <input
+                   type="tel" id="phone" value={phone}
+                   onChange={(e) => { setPhone(e.target.value.replace(/\D/g, '')); setFormErrors(prev => ({ ...prev, phone: '' })); }}
+                   placeholder="9xxxxxxxx" required maxLength={9}
+                   className={`w-full pl-10 pr-3 py-2 border ${formErrors.phone ? 'border-red-500' : 'border-gray-300'} rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm`}
+                 />
+              </div>
+              {formErrors.phone && <span className="text-xs text-red-600 mt-1">{formErrors.phone}</span>}
+            </div>
+
+            {/* Address */}
+            <div className="md:col-span-2">
+              <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-1">Dirección (Calle y Número)</label>
+              <input
+                type="text" id="address" value={address}
+                onChange={(e) => { setAddress(e.target.value); setFormErrors(prev => ({ ...prev, address: '' })); }}
+                placeholder="Ej: Av. Siempre Viva 742" required
+                className={`w-full px-3 py-2 border ${formErrors.address ? 'border-red-500' : 'border-gray-300'} rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm`}
+              />
+              {formErrors.address && <span className="text-xs text-red-600 mt-1">{formErrors.address}</span>}
+            </div>
+
+             {/* Region Select */}
+            <div>
+              <label htmlFor="region" className="block text-sm font-medium text-gray-700 mb-1">Región</label>
+              <select
+                id="region" value={region}
+                onChange={(e) => {
+                  setRegion(e.target.value);
+                  setCommune(''); // Reset commune
+                  setFormErrors(prev => ({ ...prev, region: '', commune: '' })); // Clear related errors
+                }}
+                required
+                className={`w-full px-3 py-2 border ${formErrors.region ? 'border-red-500' : 'border-gray-300'} rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm`}
+              >
+                <option value="">Selecciona una región...</option>
+                {/* Filter out empty key from data object */}
+                {availableRegions.filter(r => r).map(r => (
+                  <option key={r} value={r}>{r}</option>
+                ))}
+              </select>
+              {formErrors.region && <span className="text-xs text-red-600 mt-1">{formErrors.region}</span>}
+            </div>
+
+            {/* Commune Select */}
+            <div>
+              <label htmlFor="commune" className="block text-sm font-medium text-gray-700 mb-1">Comuna</label>
+              <select
+                id="commune" value={commune}
+                onChange={(e) => {
+                  setCommune(e.target.value);
+                  setFormErrors(prev => ({ ...prev, commune: '' })); // Clear error
+                }}
+                required
+                disabled={!region || availableCommunes.length === 0} // Disable if no region or no communes for region
+                className={`w-full px-3 py-2 border ${formErrors.commune ? 'border-red-500' : 'border-gray-300'} rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm ${!region || availableCommunes.length === 0 ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+              >
+                <option value="">{region ? 'Selecciona una comuna...' : 'Selecciona una región primero'}</option>
+                {availableCommunes.map(c => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+              {formErrors.commune && <span className="text-xs text-red-600 mt-1">{formErrors.commune}</span>}
+            </div>
+
+            {/* Observations */}
+            <div className="md:col-span-2">
+              <label htmlFor="observations" className="block text-sm font-medium text-gray-700 mb-1">Observación para el transportista (Opcional)</label>
+              <textarea
+                id="observations" value={observations}
+                onChange={(e) => setObservations(e.target.value)}
+                rows={3} placeholder="Ej: Dejar en conserjería, timbre malo..."
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+              ></textarea>
+            </div>
           </div>
-        </div>
+          {/* --- End Customer Details --- */}
 
-        {/* Address */}
-        <div className="md:col-span-2">
-          <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-1">Dirección (Calle y Número)</label>
-          <input
-            type="text"
-            id="address"
-            value={address}
-            onChange={(e) => setAddress(e.target.value)}
-            placeholder="Ej: Av. Siempre Viva 742"
-            required
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-          />
-        </div>
+          {/* General Form Error Message Area */}
+          {formErrors.general && (
+            <div className="mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+                <p className="font-medium">Error:</p>
+                <p>{formErrors.general}</p>
+            </div>
+          )}
+        </div> {/* Fin Columna Izquierda */}
 
-         {/* Region */}
-        <div>
-          <label htmlFor="region" className="block text-sm font-medium text-gray-700 mb-1">Región</label>
-          {/* TODO: Replace with a <select> populated with Chilean regions */}
-          <input
-            type="text"
-            id="region"
-            value={region}
-            onChange={(e) => setRegion(e.target.value)}
-            placeholder="Ej: Metropolitana"
-            required
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-          />
-        </div>
+        {/* Columna Derecha: Resumen y Pago */}
+        {/* Added md:border-l, md:border-gray-300, md:pl-8, lg:pl-12 for vertical separator */}
+        <div className="md:w-2/5 lg:w-1/3 md:border-l md:border-gray-300 md:pl-8 lg:pl-12">
+          <h2 className="text-xl font-medium mb-6">Resumen del Pedido</h2>
+          {/* Order Summary Table */}
+          <table className="w-full text-sm mb-6">
+            <thead>
+              <tr className="border-b">
+                <th className="text-left font-normal py-2">Producto</th>
+                <th className="text-right font-normal py-2">Subtotal</th>
+              </tr>
+            </thead>
+            <tbody>
+              {items.map(item => (
+                <tr key={item.id} className="border-b border-gray-100">
+                  <td className="py-3">{item.name} x {item.quantity}</td>
+                  <td className="text-right py-3">${formatPriceCLP(item.price * item.quantity)}</td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot>
+              <tr className="border-b">
+                <td className="py-2 text-right text-gray-600">Subtotal</td>
+                <td className="text-right py-2">${formatPriceCLP(subtotal)}</td>
+              </tr>
+              <tr>
+                <td className="py-2 text-right text-gray-600">Envío</td>
+                <td className="text-right py-2">${formatPriceCLP(shipping)}</td>
+              </tr>
+              <tr className="font-semibold">
+                <td className="py-3 text-right">Total</td>
+                <td className="text-right py-3">${formatPriceCLP(total)}</td>
+              </tr>
+            </tfoot>
+          </table>
 
-        {/* Commune */}
-        <div>
-          <label htmlFor="commune" className="block text-sm font-medium text-gray-700 mb-1">Comuna</label>
-           {/* TODO: Replace with a <select> populated based on selected region */}
-          <input
-            type="text"
-            id="commune"
-            value={commune}
-            onChange={(e) => setCommune(e.target.value)}
-            placeholder="Ej: Santiago"
-            required
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-          />
-        </div>
+          <div className="border-t pt-6">
+            <h3 className="text-lg font-medium mb-4">Selecciona tu método de pago:</h3>
+            <div className="space-y-4">
+              {/* --- Standard Button for Mercado Pago --- */}
+              <button
+                type="button"
+                onClick={fetchPreferenceAndRedirect} // Use the renamed handler
+                disabled={isLoading || isFlowLoading || !isFormValid} // Disable if loading MP, Flow, or form invalid
+                className={`w-full bg-sky-500 hover:bg-sky-600 text-white border-none px-8 py-3 text-lg rounded-lg cursor-pointer flex items-center justify-center transition-colors ${isLoading || isFlowLoading || !isFormValid ? 'opacity-50 cursor-not-allowed' : ''}`}
+              >
+                {isLoading ? 'Procesando...' : 'Pagar con Mercado Pago'}
+              </button>
+              {!isFormValid && <p className="text-center text-gray-400 text-sm">Completa tus datos para pagar con Mercado Pago.</p>}
 
-        {/* Observations */}
-        <div className="md:col-span-2">
-          <label htmlFor="observations" className="block text-sm font-medium text-gray-700 mb-1">Observación para el transportista (Opcional)</label>
-          <textarea
-            id="observations"
-            value={observations}
-            onChange={(e) => setObservations(e.target.value)}
-            rows={3}
-            placeholder="Ej: Dejar en conserjería, timbre malo..."
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-          ></textarea>
-        </div>
-      </div>
-      {/* --- End Customer Details --- */}
+              {/* Flow / Webpay Button */}
+              <div> {/* Wrap button and paragraph */}
+                <button
+                  type="button"
+                  onClick={handleFlowPaymentClick}
+                  disabled={isFlowLoading || !isFormValid} // Deshabilitar si el form no es válido o está cargando
+                  // Changed background to gray, added flex, items-center, justify-center
+                  className={`w-full bg-slate-400 text-white border-none px-8 py-3 text-lg rounded-lg cursor-pointer flex items-center justify-center ${isFlowLoading || !isFormValid ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  {isFlowLoading ? (
+                    'Procesando...'
+                  ) : (
+                    <> {/* Use Fragment to group image and text */}
+                      <img src="/assets/webpaydebito.svg" alt="Webpay" className="h-6 mr-2" /> {/* Added image */}
+                      <span>Pagar con WebPay</span> {/* Changed text */}
+                    </>
+                  )}
+                </button>
+                {/* Added paragraph below button */}
+                <p className="text-xs text-black text-center mt-2">
+                  Pago Seguro realizado a través de Flow.cl
+                </p>
+              </div>
+            </div>
+          </div>
+        </div> {/* Fin Columna Derecha */}
 
-
-      <h2 className="text-xl font-medium mb-6">Resumen del Pedido</h2>
-      {/* Order Summary Table */}
-      <table className="w-full text-sm mb-6">
-        <thead>
-          <tr className="border-b">
-            <th className="text-left font-normal py-2">Producto</th>
-            <th className="text-right font-normal py-2">Subtotal</th>
-          </tr>
-        </thead>
-        <tbody>
-          {items.map(item => (
-            <tr key={item.id} className="border-b border-gray-100">
-              <td className="py-3">{item.name} x {item.quantity}</td>
-              {/* Format line item total */}
-              <td className="text-right py-3">${formatPriceCLP(item.price * item.quantity)}</td> 
-            </tr>
-          ))}
-        </tbody>
-        <tfoot>
-          <tr className="border-b">
-            <td className="py-2 text-right text-gray-600">Subtotal</td>
-             {/* Format subtotal */}
-            <td className="text-right py-2">${formatPriceCLP(subtotal)}</td>
-          </tr>
-          <tr>
-            <td className="py-2 text-right text-gray-600">Envío</td>
-             {/* Format shipping */}
-            <td className="text-right py-2">${formatPriceCLP(shipping)}</td>
-          </tr>
-          <tr className="font-semibold">
-            <td className="py-3 text-right">Total</td>
-             {/* Format total */}
-            <td className="text-right py-3">${formatPriceCLP(total)}</td>
-          </tr>
-        </tfoot>
-      </table>
-
-      <div className="border-t pt-6">
-        <h3 className="text-lg font-medium mb-4">Selecciona tu método de pago:</h3>
-        <div className="space-y-4">
-          {/* Remove the custom Mercado Pago Button */}
-          
-          {/* Container for the Mercado Pago Brick */}
-          {/* This div will now be populated automatically when the SDK is ready */}
-          <div id="mercado-pago-brick-container" ref={mpBrickContainerRef}></div>
-          
-          {/* Remove the PayPal Button */}
-
-          {/* Flow / Webpay Button - Now uses onClick */}
-          <button 
-            type="button" 
-            onClick={handleFlowPaymentClick}
-            disabled={isFlowLoading} // Disable button while loading
-            className={`w-full bg-[#0077cc] text-white border-none px-8 py-4 text-lg rounded-lg cursor-pointer transition-colors duration-300 ease-in-out hover:bg-[#005fa3] ${isFlowLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
-             // Tailwind classes converted from the provided CSS:
-             // w-full: ensures full width like other buttons
-             // bg-[#0077cc]: background color
-             // text-white: text color
-             // border-none: remove default border
-             // px-8 py-4: padding (approximated from 1rem/2rem and font size)
-             // text-lg: font size (approximated from 1.2rem)
-             // rounded-lg: border radius (approximated from 8px)
-             // cursor-pointer: pointer cursor
-             // transition-colors duration-300 ease-in-out: transition
-             // hover:bg-[#005fa3]: hover background color
-             // Added disabled state styling: opacity-50 cursor-not-allowed
-          >
-            {isFlowLoading ? 'Procesando...' : 'Pagar con Webpay / Flow'}
-          </button>
-          {/* Removed the surrounding <a> tag */}
-
-        </div>
-      </div>
-    </div>
+      </div> {/* Fin Contenedor Flex Principal */}
+    </div> // Fin Contenedor General
   );
 };
 

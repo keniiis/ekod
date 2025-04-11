@@ -7,6 +7,9 @@ dist/
 # dependencies
 node_modules/
 
+# temporary order data
+.temp_orders/
+
 # logs
 npm-debug.log*
 yarn-debug.log*

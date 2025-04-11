@@ -1,0 +1,27 @@
+---
+import Layout from '../layouts/Layout.astro';
+
+const pageTitle = "¡Compra Confirmada!";
+const pageDescription = "Tu pedido ha sido procesado exitosamente.";
+
+// You could potentially retrieve order details here using query parameters
+// if Mercado Pago sends them correctly to this page in the future.
+// Example: const paymentId = Astro.url.searchParams.get('payment_id');
+---
+
+<Layout title={pageTitle} description={pageDescription}>
+  <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center">
+    <svg class="w-16 h-16 mx-auto text-green-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+    <h1 class="text-3xl font-bold text-gray-900 mb-2">{pageTitle}</h1>
+    <p class="text-lg text-gray-600 mb-8">
+      Gracias por tu compra. Hemos recibido tu pedido y lo estamos procesando.
+      Recibirás una confirmación por correo electrónico pronto.
+    </p>
+    <a
+      href="/"
+      class="inline-block px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
+    >
+      Volver al Inicio
+    </a>
+  </div>
+</Layout>

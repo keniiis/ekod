@@ -12,22 +12,21 @@ import type { APIRoute } from 'astro';
           console.log("Ejecutando prueba de Google Sheets...");
           try {
             // Datos de prueba que coinciden con SHEET_COLUMNS_ORDER
-            const testData = SHEET_COLUMNS_ORDER.map(col => {
-                switch(col) {
-                    case 'Nombre': return 'Prueba Nombre';
-                    case 'Apellido': return 'Prueba Apellido';
-                    case 'Teléfono': return '+56912345678';
-                    case 'Email': return 'test@example.com';
-                    case 'Dirección': return 'Calle Falsa 123';
-                    case 'Región': return 'Testlandia';
-                    case 'Comuna': return 'Providencia Test';
-                    case 'Observación Transportista': return 'Es una prueba';
-                    case 'Fecha Pedido': return new Date().toISOString();
-                    case 'ID Orden': return 'TEST-ORDER-123';
-                    case 'Monto Pagado': return 9990;
-                    default: return `Test ${col}`;
-                }
-            });
+            // El orden en que se devuelven los valores aquí debe coincidir EXACTAMENTE
+            // con el orden de las columnas en tu Google Sheet y en SHEET_COLUMNS_ORDER.
+            const testData = [
+                'Prueba Nombre',                 // Corresponde a 'Nombre'
+                'Prueba Apellido',               // Corresponde a 'Apellido'
+                '+56912345678',                  // Corresponde a 'Teléfono'
+                'test@example.com',              // Corresponde a 'Email'
+                'Calle Falsa 123',               // Corresponde a 'Dirección'
+                'Testlandia',                    // Corresponde a 'Región'
+                'Providencia Test',              // Corresponde a 'Comuna'
+                'Es una prueba',                 // Corresponde a 'Observación Transportista'
+                new Date().toISOString(),        // Corresponde a 'Fecha Pedido'
+                'TEST-ORDER-123',                // Corresponde a 'ID Orden'
+                9990                             // Corresponde a 'Monto Pagado'
+            ];
 
             await appendToSheet(testData);
             console.log("Prueba de Google Sheets completada con éxito.");
